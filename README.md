@@ -5,7 +5,8 @@ Open-core variant of [Squid Pay](https://squidpay.dev).
 Core includes:
 
 - A wallet **connect gate** before the console — **MetaMask**, **Coinbase Wallet**, **Phantom**, or **Backpack**
-- **Squid AI** after you are in the platform
+- The dark Squid console layout (Home, Chat, Money, Needs Review, Agents, Activity, CLI)
+- **Squid AI / Chat** as the only live feature after you are in
 
 Everything else that appears in the main Squid Pay console — payments, agent cards, trading, investing, agents, Needs Review, payment links, policies, catalog, developer keys, and settings — stays a **core variant** screen and sends you to [squidpay.dev](https://squidpay.dev).
 

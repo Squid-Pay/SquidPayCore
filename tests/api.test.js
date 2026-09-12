@@ -58,7 +58,7 @@ describe("Squid Pay Core API", () => {
     assert.equal(health.data.fullPlatform, "https://squidpay.dev");
 
     const core = await json(base, "/api/core");
-    assert.deepEqual(core.data.included, ["home", "wallet", "ai"]);
+    assert.deepEqual(core.data.included, ["home", "wallet", "chat", "ai"]);
     assert.deepEqual(core.data.wallets, ["metamask", "coinbase", "phantom", "backpack"]);
   });
 

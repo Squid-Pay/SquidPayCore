@@ -8,31 +8,24 @@ describe("wallet connect gate", () => {
 
   it("shows a connect screen before the platform shell", () => {
     assert.match(html, /id="connect-gate"/);
-    assert.match(html, /Connect a wallet to enter the/);
+    assert.match(html, /Connect a wallet to enter the platform/);
     assert.match(html, /id="app-shell" hidden/);
     assert.match(html, /class="on-gate"/);
   });
 
-  it("keeps wallet out of the in-app sidebar", () => {
+  it("uses the Squid console nav and keeps wallet out of the sidebar", () => {
     const nav = html.slice(html.indexOf('id="nav"'), html.indexOf("sidebar-foot"));
     assert.match(nav, /data-route="home"/);
-    assert.match(nav, /data-route="ai"/);
+    assert.match(nav, /data-route="chat"/);
+    assert.match(nav, /data-route="money"/);
+    assert.match(nav, /data-route="activity"/);
     assert.doesNotMatch(nav, /data-route="wallet"/);
   });
 
-  it("blocks platform routes until a session exists", () => {
+  it("blocks platform routes until a session exists and only Chat talks", () => {
     assert.match(app, /if \(!isConnected\(\)\)/);
     assert.match(app, /renderConnectGate\(\)/);
-    assert.match(app, /Disconnect to leave the platform/);
-  });
-});
-
-describe("wallet connect copy", () => {
-  const ai = readFileSync(new URL("../lib/ai.js", import.meta.url), "utf8");
-
-  it("does not send users to a wallet page that no longer exists", () => {
-    assert.doesNotMatch(ai, /Wallet page/);
-    assert.doesNotMatch(ai, /Open Wallet/);
-    assert.match(ai, /Connect on the entry screen/);
+    assert.match(app, /Only Squid AI \/ Chat works here/);
+    assert.match(app, /Talk to Squid AI/);
   });
 });
