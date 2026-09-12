@@ -1,0 +1,21 @@
+{
+  "name": "squidpay-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Squid Pay Core — open-core variant with wallet connect and Squid AI. Full platform: https://squidpay.dev",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0",
+    "ethers": "^6.15.0",
+    "express": "^5.1.0",
+    "tweetnacl": "^1.0.3"
+  }
+}
