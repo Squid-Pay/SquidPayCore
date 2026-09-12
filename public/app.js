@@ -61,10 +61,17 @@ function setShell(connected) {
   connectGate.hidden = connected;
 }
 
+const PROVIDER_LABELS = {
+  metamask: "MetaMask",
+  coinbase: "Coinbase Wallet",
+  phantom: "Phantom",
+  backpack: "Backpack"
+};
+
 function setChrome() {
   if (!isConnected()) return;
-  document.getElementById("wallet-chip").textContent =
-    `${state.session.provider} · ${shortAddress(state.session.address)}`;
+  const provider = PROVIDER_LABELS[state.session.provider] || "wallet";
+  document.getElementById("wallet-chip").textContent = `Signed in with ${provider}.`;
   document.querySelectorAll(".nav-item").forEach((item) => {
     const route = item.dataset.route;
     item.classList.toggle("active", route === state.route || (state.route === "ai" && route === "chat"));
@@ -144,7 +151,7 @@ function renderHome() {
   const session = state.session;
   content.innerHTML = `
     <div class="actions">
-      <button class="pill" data-core="Deposit" type="button">Deposit <span class="key">D</span></button>
+      <button class="btn-blue" data-core="Deposit" type="button">Deposit <span class="key">D</span></button>
       <button class="pill" data-core="Send" type="button">Send <span class="key">S</span></button>
       <button class="pill" id="connect-agent" type="button">Connect agent <span class="key">A</span></button>
     </div>
