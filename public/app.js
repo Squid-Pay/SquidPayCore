@@ -6,7 +6,6 @@ const api = coreWallets.api;
 
 const CORE_ROUTES = {
   home: { title: "Home", eyebrow: "Squid Pay Core" },
-  wallet: { title: "Wallet", eyebrow: "Core" },
   ai: { title: "Squid AI", eyebrow: "Core" }
 };
 
@@ -17,7 +16,7 @@ const state = {
     {
       role: "assistant",
       content:
-        "I am Squid AI on Core. Connect MetaMask, Coinbase Wallet, Phantom, or Backpack, then ask about that session. Everything else lives on squidpay.dev."
+        "I am Squid AI on Core. Your wallet is already connected for this session. Ask about Core, or I will send full-platform work to squidpay.dev."
     }
   ]
 };
@@ -25,6 +24,8 @@ const state = {
 const content = document.getElementById("content");
 const sidebar = document.getElementById("sidebar");
 const backdrop = document.getElementById("drawer-backdrop");
+const appShell = document.getElementById("app-shell");
+const connectGate = document.getElementById("connect-gate");
 
 function shortAddress(address) {
   if (!address) return "";
@@ -39,13 +40,23 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function isConnected() {
+  return Boolean(state.session?.connected && state.session.address);
+}
+
+function setShell(connected) {
+  document.body.classList.toggle("on-gate", !connected);
+  appShell.hidden = !connected;
+  connectGate.hidden = connected;
+}
+
 function setChrome() {
+  if (!isConnected()) return;
   const meta = CORE_ROUTES[state.route] || { title: "Full platform", eyebrow: "Core variant" };
   document.getElementById("top-title").textContent = meta.title;
   document.getElementById("top-eyebrow").textContent = meta.eyebrow;
-  document.getElementById("wallet-chip").textContent = state.session.connected
-    ? `${state.session.provider} · ${shortAddress(state.session.address)}`
-    : "Connect wallet";
+  document.getElementById("wallet-chip").textContent =
+    `${state.session.provider} · ${shortAddress(state.session.address)}`;
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.classList.toggle("active", item.dataset.route === state.route);
   });
@@ -61,9 +72,40 @@ function openMenu() {
   backdrop.hidden = false;
 }
 
+function walletCardsHtml() {
+  const detected = detectInstalledWallets();
+  return Object.values(WALLET_CATALOG)
+    .map((wallet) => {
+      const live = detected[wallet.id];
+      const status = live.installed ? "Detected in this browser" : "Install to connect";
+      return `
+        <button class="wallet-card ${live.installed ? "ready" : ""}" data-wallet="${wallet.id}" type="button">
+          <span class="wallet-mark" style="background:${wallet.color}">${wallet.mark}</span>
+          <span>
+            <h3>${wallet.name}</h3>
+            <p>${wallet.family === "evm" ? "EVM" : "Solana"} · ${status}</p>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderConnectGate() {
+  setShell(false);
+  closeMenu();
+  const list = document.getElementById("gate-wallets");
+  list.innerHTML = walletCardsHtml();
+  const errorEl = document.getElementById("wallet-error");
+  errorEl.hidden = true;
+  errorEl.textContent = "";
+  list.querySelectorAll("[data-wallet]").forEach((button) => {
+    button.addEventListener("click", () => handleConnect(button.dataset.wallet));
+  });
+}
+
 async function refreshSession() {
   state.session = await api("/api/session");
-  setChrome();
 }
 
 function renderHome() {
@@ -72,33 +114,33 @@ function renderHome() {
     <section class="hero">
       <div>
         <h2>Dive into the future of the <em>economy.</em></h2>
-        <p class="lede">Every AI agent needs a bank. This Core variant keeps the simple path: connect a wallet and talk to Squid AI. The rest of the Squid Pay console is on the full platform.</p>
+        <p class="lede">You are in Squid Pay Core. Squid AI can talk about this wallet session. Payments, cards, agents, and the rest of the console stay on the full platform.</p>
         <div class="actions">
-          <a class="btn" href="#/wallet">${session.connected ? "Open wallet" : "Connect wallet"} →</a>
-          <a class="ghost" href="#/ai">Talk to Squid AI</a>
+          <a class="btn" href="#/ai">Talk to Squid AI →</a>
+          <a class="ghost" href="https://squidpay.dev" target="_blank" rel="noreferrer">Open squidpay.dev</a>
         </div>
       </div>
       <div class="card-visual">
         <div class="row">
-          <span>${session.connected ? escapeHtml(session.provider) : "squid"}</span>
-          <span>${session.connected ? escapeHtml(shortAddress(session.address)) : "Core session"}</span>
+          <span>${escapeHtml(session.provider)}</span>
+          <span>${escapeHtml(shortAddress(session.address))}</span>
         </div>
         <div>
-          <div class="amt">${session.connected ? "Connected" : "Open core"}</div>
-          <div class="chip">${session.connected ? session.chain : "MetaMask · Coinbase · Phantom · Backpack"}</div>
+          <div class="amt">Connected</div>
+          <div class="chip">${escapeHtml(session.chain)}</div>
         </div>
       </div>
     </section>
     <section class="grid">
       <article class="panel">
-        <p class="kicker">included</p>
-        <h3>Wallet connect</h3>
-        <p>Prove you own MetaMask, Coinbase Wallet, Phantom, or Backpack. Core never holds a seed phrase.</p>
+        <p class="kicker">session</p>
+        <h3>Wallet is the door</h3>
+        <p>Core only uses MetaMask, Coinbase Wallet, Phantom, or Backpack to let you in. Disconnect to leave the platform.</p>
       </article>
       <article class="panel">
         <p class="kicker">included</p>
         <h3>Squid AI</h3>
-        <p>Ask about your session, Core limits, and where the full product lives.</p>
+        <p>Ask about this session, Core limits, and where the full product lives.</p>
       </article>
       <article class="panel">
         <p class="kicker">squidpay.dev</p>
@@ -109,62 +151,13 @@ function renderHome() {
   `;
 }
 
-function renderWallet() {
-  const detected = detectInstalledWallets();
-  const cards = Object.values(WALLET_CATALOG)
-    .map((wallet) => {
-      const live = detected[wallet.id];
-      const active = state.session.connected && state.session.provider === wallet.id;
-      const status = live.installed ? "Detected in this browser" : "Install to connect";
-      return `
-        <button class="wallet-card ${live.installed ? "ready" : ""} ${active ? "active" : ""}" data-wallet="${wallet.id}" type="button">
-          <span class="wallet-mark" style="background:${wallet.color}">${wallet.mark}</span>
-          <span>
-            <h3>${wallet.name}</h3>
-            <p>${wallet.family === "evm" ? "EVM" : "Solana"} · ${status}</p>
-          </span>
-        </button>
-      `;
-    })
-    .join("");
-
-  const session = state.session.connected
-    ? `
-      <div class="session-box">
-        <div>
-          <div class="chip ok">Connected</div>
-          <h3 style="margin:8px 0 6px">${escapeHtml(state.session.provider)}</h3>
-          <div class="mono">${escapeHtml(state.session.address)}</div>
-          <p class="muted" style="color:#9ca3af">Chain ${escapeHtml(state.session.chain)}</p>
-        </div>
-        <button class="ghost" id="disconnect-btn" type="button">Disconnect</button>
-      </div>
-    `
-    : `<p class="muted">Choose a wallet. Core asks it to sign a session message. No funds move.</p>`;
-
-  content.innerHTML = `
-    <section class="panel" style="margin-bottom:14px">
-      <p class="kicker">session</p>
-      <h3>Owner wallet stays the signer</h3>
-      ${session}
-    </section>
-    <div class="wallet-grid">${cards}</div>
-    <p class="error" id="wallet-error" hidden></p>
-  `;
-
-  content.querySelectorAll("[data-wallet]").forEach((button) => {
-    button.addEventListener("click", () => handleConnect(button.dataset.wallet));
-  });
-  document.getElementById("disconnect-btn")?.addEventListener("click", handleDisconnect);
-}
-
 async function handleConnect(id) {
   const errorEl = document.getElementById("wallet-error");
   errorEl.hidden = true;
   try {
     state.session = await connectBrowserWallet(id);
-    renderWallet();
-    setChrome();
+    if (location.hash !== "#/home") location.hash = "#/home";
+    else await showPlatform(currentRoute());
   } catch (error) {
     errorEl.hidden = false;
     errorEl.innerHTML = error.install
@@ -175,8 +168,8 @@ async function handleConnect(id) {
 
 async function handleDisconnect() {
   state.session = await api("/api/session/disconnect", { method: "POST", body: {} });
-  renderWallet();
-  setChrome();
+  if (location.hash && location.hash !== "#/connect") location.hash = "#/connect";
+  renderConnectGate();
 }
 
 function renderAi() {
@@ -186,7 +179,7 @@ function renderAi() {
   content.innerHTML = `
     <div class="prompts">
       <button class="prompt" data-prompt="What can Core do?" type="button">What can Core do?</button>
-      <button class="prompt" data-prompt="How do I connect Phantom or MetaMask?" type="button">Connect a wallet</button>
+      <button class="prompt" data-prompt="Which wallet is connected?" type="button">Which wallet is connected?</button>
       <button class="prompt" data-prompt="I need to send a payment and issue an agent card." type="button">Payments and cards</button>
     </div>
     <section class="chat">
@@ -245,16 +238,25 @@ function renderGate(payload) {
   `;
 }
 
-async function renderRoute(route) {
-  state.route = route;
+async function showPlatform(route) {
+  const next = route === "wallet" || route === "connect" ? "home" : route || "home";
+  state.route = next;
+  setShell(true);
   setChrome();
   closeMenu();
-  if (route === "home") return renderHome();
-  if (route === "wallet") return renderWallet();
-  if (route === "ai") return renderAi();
-  const payload = await api(`/api/platform/${encodeURIComponent(route)}`);
+  if (next === "home") return renderHome();
+  if (next === "ai") return renderAi();
+  const payload = await api(`/api/platform/${encodeURIComponent(next)}`);
   document.getElementById("top-title").textContent = payload.title || "Full platform";
   renderGate(payload);
+}
+
+async function renderRoute(route) {
+  if (!isConnected()) {
+    renderConnectGate();
+    return;
+  }
+  await showPlatform(route);
 }
 
 function currentRoute() {
@@ -262,9 +264,7 @@ function currentRoute() {
   return raw || "home";
 }
 
-document.getElementById("wallet-chip").addEventListener("click", () => {
-  location.hash = "#/wallet";
-});
+document.getElementById("disconnect-btn").addEventListener("click", handleDisconnect);
 document.getElementById("menu-btn").addEventListener("click", openMenu);
 backdrop.addEventListener("click", closeMenu);
 window.addEventListener("hashchange", () => renderRoute(currentRoute()));

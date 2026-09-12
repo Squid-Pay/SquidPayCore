@@ -24,6 +24,40 @@ body {
   background: var(--bg);
 }
 
+body.on-gate { background: #fff; }
+body.on-gate .app { display: none; }
+
+.connect-gate {
+  display: none;
+  min-height: 100vh;
+  padding: 28px 32px 64px;
+}
+body.on-gate .connect-gate { display: block; }
+.gate-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  max-width: 920px;
+  margin: 0 auto 48px;
+}
+.gate-top .brand { padding: 0; }
+.gate-body {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.gate-body h1 {
+  margin: 0 0 12px;
+  font-size: clamp(36px, 6vw, 58px);
+  letter-spacing: -0.05em;
+  line-height: 1.02;
+}
+.gate-body h1 em {
+  color: var(--blue);
+  font-style: normal;
+}
+.gate-note { margin-top: 22px; }
+
 button, input, textarea { font: inherit; }
 a { color: inherit; }
 
@@ -333,7 +367,8 @@ a { color: inherit; }
   .sidebar.open { transform: none; }
   .menu-btn { display: inline-flex !important; }
   .hero, .grid, .grid.two, .wallet-grid { grid-template-columns: 1fr; }
-  .content, .topbar { padding-left: 16px; padding-right: 16px; }
+  .content, .topbar, .connect-gate { padding-left: 16px; padding-right: 16px; }
+  .gate-top { margin-bottom: 28px; }
   .topbar-actions .btn { display: none; }
   .session-box { flex-direction: column; align-items: flex-start; }
 }

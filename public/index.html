@@ -17,8 +17,27 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <div class="app">
+  <body class="on-gate">
+    <div class="connect-gate" id="connect-gate">
+      <header class="gate-top">
+        <div class="brand">
+          <img src="/brand/mark.svg" alt="" width="28" height="28" />
+          <span class="brand-name">squid</span>
+          <span class="core-pill">Core</span>
+        </div>
+        <a class="ghost" href="https://squidpay.dev" target="_blank" rel="noreferrer">Full platform →</a>
+      </header>
+      <div class="gate-body">
+        <p class="eyebrow">Connect to enter</p>
+        <h1>Connect a wallet to enter the <em>platform.</em></h1>
+        <p class="lede">Choose MetaMask, Coinbase Wallet, Phantom, or Backpack. Core only uses this step to start a session. No funds move.</p>
+        <div class="wallet-grid" id="gate-wallets"></div>
+        <p class="error" id="wallet-error" hidden></p>
+        <p class="muted gate-note">This is a core variant. After you connect, the rest of the Squid Pay console is still on <a class="text-link" href="https://squidpay.dev" target="_blank" rel="noreferrer">squidpay.dev</a>.</p>
+      </div>
+    </div>
+
+    <div class="app" id="app-shell" hidden>
       <aside class="sidebar" id="sidebar">
         <a class="brand" href="#/home" aria-label="Squid Pay Core home">
           <img src="/brand/mark.svg" alt="" width="28" height="28" />
@@ -31,10 +50,6 @@
           <a class="nav-item" data-route="home" href="#/home">
             <span class="nav-ico" aria-hidden="true">⌂</span>
             Home
-          </a>
-          <a class="nav-item" data-route="wallet" href="#/wallet">
-            <span class="nav-ico" aria-hidden="true">◈</span>
-            Wallet
           </a>
           <a class="nav-item" data-route="ai" href="#/ai">
             <span class="nav-ico" aria-hidden="true">✦</span>
@@ -113,7 +128,8 @@
             <h1 id="top-title">Home</h1>
           </div>
           <div class="topbar-actions">
-            <button class="ghost" id="wallet-chip" type="button">Connect wallet</button>
+            <span class="ghost" id="wallet-chip">Wallet</span>
+            <button class="ghost" id="disconnect-btn" type="button">Disconnect</button>
             <a class="btn" href="https://squidpay.dev" target="_blank" rel="noreferrer">Full platform →</a>
           </div>
         </header>

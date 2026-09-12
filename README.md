@@ -4,8 +4,8 @@ Open-core variant of [Squid Pay](https://squidpay.dev).
 
 Core includes:
 
-- Wallet connect for **MetaMask**, **Coinbase Wallet**, **Phantom**, and **Backpack**
-- **Squid AI** for the connected session
+- A wallet **connect gate** before the console — **MetaMask**, **Coinbase Wallet**, **Phantom**, or **Backpack**
+- **Squid AI** after you are in the platform
 
 Everything else that appears in the main Squid Pay console — payments, agent cards, trading, investing, agents, Needs Review, payment links, policies, catalog, developer keys, and settings — stays a **core variant** screen and sends you to [squidpay.dev](https://squidpay.dev).
 
@@ -33,6 +33,6 @@ cp .env.example .env
 
 ## What this is
 
-Squid Pay Core is the simple path: connect a browser wallet, talk to Squid AI, and see the rest of the product as the full-platform surface.
+Squid Pay Core is the simple path: connect a browser wallet to enter, talk to Squid AI, and see the rest of the product as the full-platform surface. Disconnect returns you to the connect screen.
 
 The full product — holds, agent budgets, MCP, cards, and money movement — lives at **https://squidpay.dev**.
