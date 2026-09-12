@@ -26,3 +26,13 @@ describe("wallet connect gate", () => {
     assert.match(app, /Disconnect to leave the platform/);
   });
 });
+
+describe("wallet connect copy", () => {
+  const ai = readFileSync(new URL("../lib/ai.js", import.meta.url), "utf8");
+
+  it("does not send users to a wallet page that no longer exists", () => {
+    assert.doesNotMatch(ai, /Wallet page/);
+    assert.doesNotMatch(ai, /Open Wallet/);
+    assert.match(ai, /Connect on the entry screen/);
+  });
+});
