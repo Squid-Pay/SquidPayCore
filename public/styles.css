@@ -331,7 +331,7 @@ a { color: inherit; }
     width: min(86vw, 300px);
   }
   .sidebar.open { transform: none; }
-  .menu-btn { display: inline-flex; }
+  .menu-btn { display: inline-flex !important; }
   .hero, .grid, .grid.two, .wallet-grid { grid-template-columns: 1fr; }
   .content, .topbar { padding-left: 16px; padding-right: 16px; }
   .topbar-actions .btn { display: none; }

@@ -1,4 +1,8 @@
-const { WALLET_META, detectWallets, connectWallet, api } = window.SquidCoreWallets;
+const coreWallets = window.SquidCoreWallets;
+const WALLET_CATALOG = coreWallets.WALLET_META;
+const detectInstalledWallets = coreWallets.detectWallets;
+const connectBrowserWallet = coreWallets.connectWallet;
+const api = coreWallets.api;
 
 const CORE_ROUTES = {
   home: { title: "Home", eyebrow: "Squid Pay Core" },
@@ -106,8 +110,8 @@ function renderHome() {
 }
 
 function renderWallet() {
-  const detected = detectWallets();
-  const cards = Object.values(WALLET_META)
+  const detected = detectInstalledWallets();
+  const cards = Object.values(WALLET_CATALOG)
     .map((wallet) => {
       const live = detected[wallet.id];
       const active = state.session.connected && state.session.provider === wallet.id;
@@ -139,17 +143,13 @@ function renderWallet() {
     : `<p class="muted">Choose a wallet. Core asks it to sign a session message. No funds move.</p>`;
 
   content.innerHTML = `
-    <section class="grid two" style="align-items:start">
-      <div>
-        <div class="wallet-grid">${cards}</div>
-        <p class="error" id="wallet-error" hidden></p>
-      </div>
-      <div class="panel">
-        <p class="kicker">session</p>
-        <h3>Owner wallet stays the signer</h3>
-        ${session}
-      </div>
+    <section class="panel" style="margin-bottom:14px">
+      <p class="kicker">session</p>
+      <h3>Owner wallet stays the signer</h3>
+      ${session}
     </section>
+    <div class="wallet-grid">${cards}</div>
+    <p class="error" id="wallet-error" hidden></p>
   `;
 
   content.querySelectorAll("[data-wallet]").forEach((button) => {
@@ -162,7 +162,7 @@ async function handleConnect(id) {
   const errorEl = document.getElementById("wallet-error");
   errorEl.hidden = true;
   try {
-    state.session = await connectWallet(id);
+    state.session = await connectBrowserWallet(id);
     renderWallet();
     setChrome();
   } catch (error) {
