@@ -235,7 +235,7 @@ body.on-gate .connect-gate { display: block; }
 
 .chat {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   height: calc(100vh - 72px);
 }
 .chat-head { padding: 8px 28px 0; color: var(--muted); font-size: 13px; }
@@ -263,7 +263,7 @@ body.on-gate .connect-gate { display: block; }
   border-radius: 999px;
   padding: 12px 14px;
 }
-.prompts { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 28px 8px; }
+.prompts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0 28px 8px; height: auto; }
 .prompt {
   background: var(--panel);
   border: 1px solid var(--line);
