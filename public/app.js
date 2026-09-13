@@ -25,6 +25,7 @@ const backdrop = document.getElementById("drawer-backdrop");
 const appShell = document.getElementById("app-shell");
 const connectGate = document.getElementById("connect-gate");
 const modal = document.getElementById("modal");
+const modalCard = document.getElementById("modal-card");
 const modalBackdrop = document.getElementById("modal-backdrop");
 
 function shortAddress(address) {
@@ -87,7 +88,7 @@ function cycleTheme() {
 }
 
 function setShell(connected) {
-  document.body.classList.toggle("on-gate", !connected);
+  document.body.classList.toggle("wallet-gate-active", !connected);
   document.body.classList.toggle("chat-page", connected && (state.route === "chat" || state.route === "ai"));
   document.body.classList.toggle("cli-page", connected && state.route === "cli");
   appShell.hidden = !connected;
@@ -106,7 +107,7 @@ function setChrome() {
   if (!isConnected()) return;
   const provider = PROVIDER_LABELS[state.session.provider] || "wallet";
   document.getElementById("wallet-chip").textContent = `Signed in with ${provider}.`;
-  document.querySelectorAll(".nav-item").forEach((item) => {
+  document.querySelectorAll(".nav-button").forEach((item) => {
     const route = item.dataset.route;
     item.classList.toggle("active", route === state.route || (state.route === "ai" && route === "chat"));
   });
@@ -124,39 +125,49 @@ function openMenu() {
 
 function closeModal() {
   modal.hidden = true;
-  modalBackdrop.hidden = true;
-  modal.innerHTML = "";
+  modalCard.innerHTML = "";
 }
 
 function openCoreModal(title, copy) {
   modal.hidden = false;
-  modalBackdrop.hidden = false;
-  modal.innerHTML = `
-    <div class="banner">Core variant</div>
-    <h2>${escapeHtml(title)}</h2>
-    <p class="muted">${escapeHtml(copy)}</p>
-    <p>This is a Squid Pay Core variant. Only Squid AI / Chat works here. Open the full console for this action.</p>
-    <div class="modal-actions">
-      <button class="pill" id="modal-cancel" type="button">Cancel</button>
-      <a class="btn-blue" href="${FULL}" target="_blank" rel="noreferrer">Open Squid Pay</a>
+  modalCard.innerHTML = `
+    <div class="app-modal-head">
+      <div>
+        <p class="eyebrow">Core variant</p>
+        <h2>${escapeHtml(title)}</h2>
+      </div>
+      <button class="panel-close" id="modal-x" type="button">×</button>
+    </div>
+    <div class="app-modal-body">
+      <p>${escapeHtml(copy)}</p>
+      <p>This is a Squid Pay Core variant. Only Squid AI / Chat works here. Open the full console for this action.</p>
+    </div>
+    <div class="app-modal-actions">
+      <button id="modal-cancel" type="button">Cancel</button>
+      <a href="${FULL}" target="_blank" rel="noreferrer"><button class="primary" type="button">Open Squid Pay</button></a>
     </div>
   `;
   document.getElementById("modal-cancel").onclick = closeModal;
+  document.getElementById("modal-x").onclick = closeModal;
 }
 
 function walletCardsHtml() {
   const detected = detectInstalledWallets();
+  const chrome = {
+    metamask: { id: "metamask-connect", cls: "", icon: '<span class="metamask-connect-icon">M</span>' },
+    coinbase: { id: "coinbase-connect", cls: "", icon: '<span class="coinbase-connect-icon">C</span>' },
+    phantom: { id: "phantom-connect", cls: "phantom-connect", icon: '<span class="phantom-connect-icon">P</span>' },
+    backpack: { id: "backpack-connect", cls: "", icon: '<span class="backpack-connect-icon">B</span>' }
+  };
   return Object.values(WALLET_CATALOG)
     .map((wallet) => {
       const live = detected[wallet.id];
+      const look = chrome[wallet.id] || { id: wallet.id, cls: "", icon: wallet.mark };
       const status = live.installed ? "Detected in this browser" : "Install to connect";
       return `
-        <button class="wallet-card ${live.installed ? "ready" : ""}" data-wallet="${wallet.id}" type="button">
-          <span class="wallet-mark" style="background:${wallet.color}">${wallet.mark}</span>
-          <span>
-            <h3>${wallet.name}</h3>
-            <p>${wallet.family === "evm" ? "EVM" : "Solana"} · ${status}</p>
-          </span>
+        <button class="${look.cls}" id="${look.id}" data-wallet="${wallet.id}" type="button">
+          ${look.icon}
+          <span>${wallet.name} · ${status}</span>
         </button>
       `;
     })
@@ -184,56 +195,51 @@ async function refreshSession() {
 function renderHome() {
   const address = state.session.address || "";
   content.innerHTML = `
-    <div class="actions">
-      <button class="btn-blue" data-core="Deposit" type="button">${ICO.plus} Deposit <span class="key">D</span></button>
-      <button class="pill" data-core="Send" type="button">${ICO.send} Send <span class="key">S</span></button>
-      <button class="pill" id="home-agents" type="button">${ICO.spark} Agents <span class="key">A</span></button>
+    <div class="view">
+      <div class="action-bar">
+        <button class="action-chip primary" data-core="Deposit" type="button">${ICO.plus} Deposit <kbd>D</kbd></button>
+        <button class="action-chip" data-core="Send" type="button">${ICO.send} Send <kbd>S</kbd></button>
+        <button class="action-chip" id="home-agents" type="button">${ICO.spark} Agents <kbd>A</kbd></button>
+      </div>
+      <section class="band squid-wallet-card">
+        <div class="section-head">
+          <div>
+            <h2>Squid Wallet</h2>
+            <p>Your embedded Squid wallet is created automatically with email login.</p>
+          </div>
+        </div>
+        <div class="grid two">
+          <article class="metric"><span>Balance</span><strong>$0.00</strong></article>
+          <article class="metric"><span>Wallet address</span><strong>${escapeHtml(shortWallet(address))}</strong></article>
+          <article class="metric"><span>USDC</span><strong>0 USDC</strong></article>
+          <article class="metric"><span>SOL</span><strong>0 SOL</strong></article>
+        </div>
+        <div class="squid-wallet-actions">
+          <button class="primary" data-core="Deposit" type="button">${ICO.plus} Deposit</button>
+          <button data-core="Refresh" type="button">${ICO.refresh} Refresh</button>
+          <button id="copy-address" type="button">${ICO.copy} Copy address</button>
+        </div>
+        <p class="deposit-warning">Funds sent to this Solana address appear after a refresh. Squid never holds your private key.</p>
+      </section>
+      <section class="band">
+        <div class="section-head">
+          <div>
+            <h2>Wallets</h2>
+            <p>Balances across your Squid wallet and connected wallets.</p>
+          </div>
+        </div>
+        <div class="asset-list">
+          <div class="asset-row">
+            <span class="asset-icon chain-solana">S</span>
+            <div class="asset-main">
+              <strong>Solana</strong>
+              <span>${escapeHtml(address)} · Squid</span>
+            </div>
+            <div class="asset-value">$0.00<span>Connected</span></div>
+          </div>
+        </div>
+      </section>
     </div>
-    <section class="home-panel">
-      <h2>Squid Wallet</h2>
-      <p class="muted home-sub">Your embedded Squid wallet is created automatically with email login.</p>
-      <div class="wallet-tiles">
-        <article class="wallet-tile">
-          <div class="label">Balance</div>
-          <div class="tile-value">$0.00</div>
-        </article>
-        <article class="wallet-tile">
-          <div class="label">Wallet address</div>
-          <div class="tile-value">${escapeHtml(shortWallet(address))}</div>
-        </article>
-        <article class="wallet-tile">
-          <div class="label">USDC</div>
-          <div class="tile-value">0 USDC</div>
-        </article>
-        <article class="wallet-tile">
-          <div class="label">SOL</div>
-          <div class="tile-value">0 SOL</div>
-        </article>
-      </div>
-      <div class="actions home-wallet-actions">
-        <button class="btn-blue" data-core="Deposit" type="button">${ICO.plus} Deposit</button>
-        <button class="pill" data-core="Refresh" type="button">${ICO.refresh} Refresh</button>
-        <button class="pill" id="copy-address" type="button">${ICO.copy} Copy address</button>
-      </div>
-      <p class="muted home-note">Funds sent to this Solana address appear after a refresh. Squid never holds your private key.</p>
-    </section>
-    <section class="home-panel">
-      <h2>Wallets</h2>
-      <p class="muted home-sub">Balances across your Squid wallet and connected wallets.</p>
-      <div class="linked-wallet">
-        <span class="sol-mark" aria-hidden="true">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M3.2 4.15h8.3L10 5.85H1.7L3.2 4.15Zm0 5.99h8.3L10 11.84H1.7L3.2 10.14Zm9.6-3.08H4.5L6 5.36h8.3L12.8 7.06Z" fill="currentColor"/></svg>
-        </span>
-        <div class="linked-copy">
-          <div class="linked-name">Solana</div>
-          <div class="mono">${escapeHtml(address)} · Squid</div>
-        </div>
-        <div class="linked-right">
-          <div>$0.00</div>
-          <div class="muted">Connected</div>
-        </div>
-      </div>
-    </section>
   `;
   content.querySelectorAll("[data-core]").forEach((button) => {
     button.onclick = () =>
@@ -275,35 +281,25 @@ async function copyText(value) {
 
 function openCreateAgent() {
   modal.hidden = false;
-  modalBackdrop.hidden = false;
-  modal.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h2>Create agent</h2>
-      <button class="icon-btn" id="modal-x" type="button">×</button>
+  modalCard.innerHTML = `
+    <div class="app-modal-head">
+      <div>
+        <p class="eyebrow">Core variant</p>
+        <h2>Create agent</h2>
+      </div>
+      <button class="panel-close" id="modal-x" type="button">×</button>
     </div>
-    <p class="muted">Name your agent, set an optional spending limit, then pick the framework to connect.</p>
-    <div class="field">
-      <label>Agent name</label>
-      <input placeholder="e.g. Ops agent" disabled />
+    <div class="app-modal-body">
+      <p>Name your agent, set an optional spending limit, then pick the framework to connect.</p>
+      <label>Agent name<input placeholder="e.g. Ops agent" disabled /></label>
+      <label>Spending limit per payment (USD)<input placeholder="No limit" disabled /></label>
+      <label>Framework<select disabled><option>Custom</option></select></label>
+      <label>Linked wallet<select disabled><option>Proposal-only — link later</option></select></label>
+      <p>This is a public wallet association only. The agent cannot access private keys or sign. Creating agents is not included in Core.</p>
     </div>
-    <div class="field">
-      <label>Spending limit per payment (USD)</label>
-      <input placeholder="No limit" disabled />
-    </div>
-    <div class="field">
-      <label>Framework</label>
-      <select disabled><option>Custom</option></select>
-    </div>
-    <div class="field">
-      <label>Linked wallet</label>
-      <select disabled><option>Proposal-only — link later</option></select>
-    </div>
-    <p class="muted">This is a public wallet association only. The agent cannot access private keys or sign.</p>
-    <div class="banner">Core variant</div>
-    <p>Creating agents is not included in Core. Only Squid AI / Chat works here.</p>
-    <div class="modal-actions">
-      <button class="pill" id="modal-cancel" type="button">Cancel</button>
-      <a class="btn-blue" href="${FULL}" target="_blank" rel="noreferrer">Create agent</a>
+    <div class="app-modal-actions">
+      <button id="modal-cancel" type="button">Cancel</button>
+      <a href="${FULL}" target="_blank" rel="noreferrer"><button class="primary" type="button">Create agent</button></a>
     </div>
   `;
   document.getElementById("modal-cancel").onclick = closeModal;
@@ -312,20 +308,29 @@ function openCreateAgent() {
 
 function renderChat() {
   const bubbles = state.chat
-    .map((msg) => `<div class="bubble ${msg.role}">${escapeHtml(msg.content)}</div>`)
+    .map(
+      (msg) =>
+        `<div class="chat-message ${msg.role}"><strong>${msg.role === "user" ? "You" : "Squid AI"}</strong><p>${escapeHtml(msg.content)}</p></div>`
+    )
     .join("");
   content.innerHTML = `
-    <section class="chat">
-      <div class="chat-head">Squid AI · talk only on Core</div>
-      <div class="prompts">
-        <button class="prompt" data-prompt="What can Core do?" type="button">What can Core do?</button>
-        <button class="prompt" data-prompt="Which wallet is connected?" type="button">Which wallet is connected?</button>
-        <button class="prompt" data-prompt="Create an agent and send a payment." type="button">Agents and payments</button>
+    <section class="chat-panel">
+      <div class="chat-examples">
+        <div class="chat-examples-head">
+          <p class="eyebrow">Squid AI</p>
+          <h3>Talk only on Core</h3>
+          <p>Money, agents, review, and CLI stay on the full platform.</p>
+        </div>
+        <div class="chat-examples-grid">
+          <button class="chat-example-card" data-prompt="What can Core do?" type="button"><strong>What can Core do?</strong><span>Live talk. Everything else is gated.</span></button>
+          <button class="chat-example-card" data-prompt="Which wallet is connected?" type="button"><strong>Which wallet is connected?</strong><span>Read the Core session.</span></button>
+          <button class="chat-example-card" data-prompt="Create an agent and send a payment." type="button"><strong>Agents and payments</strong><span>Those live on squidpay.dev.</span></button>
+        </div>
       </div>
-      <div class="thread" id="thread">${bubbles}</div>
-      <form class="composer" id="chat-form">
+      <div class="chat-thread" id="thread">${bubbles}</div>
+      <form class="chat-composer" id="chat-form">
         <input name="message" placeholder="Talk to Squid AI…" autocomplete="off" />
-        <button class="btn-blue" type="submit">Send</button>
+        <button class="primary chat-send" type="submit">Send</button>
       </form>
     </section>
   `;
@@ -363,14 +368,22 @@ async function sendChat(text) {
 
 function corePage(title, extraHtml) {
   content.innerHTML = `
-    <div class="banner">Core variant</div>
-    <h2 style="margin:0 0 8px;letter-spacing:-0.03em">${escapeHtml(title)}</h2>
-    <p class="muted">This is a Squid Pay Core variant. Only Squid AI / Chat works here. ${escapeHtml(title)} lives on the full console.</p>
-    <div class="actions">
-      <a class="btn-blue" href="${FULL}" target="_blank" rel="noreferrer">Open Squid Pay</a>
-      <a class="pill" href="#/chat">Talk to Squid AI</a>
+    <div class="view">
+      <section class="band">
+        <p class="notice visible">Core variant</p>
+        <div class="section-head">
+          <div>
+            <h2>${escapeHtml(title)}</h2>
+            <p>This is a Squid Pay Core variant. Only Squid AI / Chat works here. ${escapeHtml(title)} lives on the full console.</p>
+          </div>
+        </div>
+        <div class="actions">
+          <a href="${FULL}" target="_blank" rel="noreferrer"><button class="primary" type="button">Open Squid Pay</button></a>
+          <a href="#/chat"><button type="button">Talk to Squid AI</button></a>
+        </div>
+      </section>
+      ${extraHtml || ""}
     </div>
-    ${extraHtml || ""}
   `;
 }
 
@@ -378,56 +391,40 @@ function renderMoney() {
   corePage(
     "Money",
     `
-    <section class="stats">
-      <article class="card"><div class="label">Available</div><div class="metric">$0.00</div></article>
-      <article class="card"><div class="label">Daily money</div><p class="muted">Pay people or services</p></article>
-      <article class="card"><div class="label">Verified payments</div><div class="metric">0</div></article>
-    </section>
+    <div class="grid">
+      <article class="metric"><span>Available</span><strong>$0.00</strong></article>
+      <article class="metric"><span>Daily money</span><p>Pay people or services</p></article>
+      <article class="metric"><span>Verified payments</span><strong>0</strong></article>
+    </div>
   `
   );
 }
 
 function renderHolds() {
-  corePage(
-    "Needs Review",
-    `<section class="card activity-empty"><div><h3>No holds</h3><p class="muted">Review queues run on squidpay.dev.</p></div></section>`
-  );
+  corePage("Needs Review", `<div class="empty"><strong>No holds</strong>Review queues run on squidpay.dev.</div>`);
 }
 
 function renderAgents() {
-  corePage(
-    "Agents",
-    `<section class="card activity-empty"><div><h3>No agents</h3><p class="muted">Create agents on the full platform.</p></div></section>`
-  );
+  corePage("Agents", `<div class="empty"><strong>No agents</strong>Create agents on the full platform.</div>`);
 }
 
 function renderActivity() {
-  const cells = Array.from({ length: 7 * 24 }, (_, i) => `<span class="heat-cell${i === 110 || i === 163 ? " on" : ""}"></span>`).join("");
   corePage(
     "Activity",
     `
-    <h3>Trade intensity</h3>
-    <p class="muted">When and where the most activity happens</p>
-    <section class="stats">
-      <article class="card"><div class="label">Busiest when</div><div class="metric" style="font-size:20px">—</div></article>
-      <article class="card"><div class="label">Busiest where</div><div class="metric" style="font-size:20px">Chat</div></article>
-      <article class="card"><div class="label">Logged events</div><div class="metric">0</div></article>
-    </section>
-    <section class="card heat">
-      <div class="muted">When</div>
-      <div class="heat-grid">${cells}</div>
-      <div class="bars">
-        <div class="bar"><span>Trading</span><i></i><span>0</span></div>
-        <div class="bar"><span>Payments</span><i></i><span>0</span></div>
-        <div class="bar"><span>Agents</span><i><em style="width:0"></em></i><span>0</span></div>
+    <div class="grid">
+      <article class="metric"><span>Busiest when</span><strong>—</strong></article>
+      <article class="metric"><span>Busiest where</span><strong>Chat</strong></article>
+      <article class="metric"><span>Logged events</span><strong>0</strong></article>
+    </div>
+    <section class="band">
+      <div class="section-head"><div><h3>Activity log</h3><p>When and where the most activity happens</p></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Time</th><th>From</th><th>Action</th><th>Outcome</th><th>Why</th></tr></thead>
+          <tbody><tr><td colspan="6">Nothing here yet.</td></tr></tbody>
+        </table>
       </div>
-    </section>
-    <section class="card" style="margin-top:12px">
-      <h3>Activity log</h3>
-      <table class="table">
-        <thead><tr><th>Area</th><th>Time</th><th>From</th><th>Action</th><th>Outcome</th><th>Why</th></tr></thead>
-        <tbody><tr><td colspan="6" class="muted">Nothing here yet.</td></tr></tbody>
-      </table>
     </section>
   `
   );

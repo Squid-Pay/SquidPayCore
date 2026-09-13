@@ -19,107 +19,108 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="on-gate">
-    <div class="connect-gate" id="connect-gate">
-      <header class="gate-top">
-        <div class="brand">
-          <img src="/brand/mark.svg" alt="" width="22" height="22" />
-          <span class="brand-name">Squid</span>
-          <span class="core-pill">Core</span>
+  <body class="wallet-gate-active">
+    <section class="wallet-onboarding" id="connect-gate">
+      <div class="wallet-onboarding-card">
+        <div class="wallet-onboarding-brand">
+          <img class="wallet-onboarding-mark" src="/brand/favicon.png" alt="" />
+          <strong>Squid</strong>
         </div>
-        <a class="pill" href="https://squidpay.dev" target="_blank" rel="noreferrer">Full platform</a>
-      </header>
-      <div class="gate-body">
-        <p class="kicker">Connect to enter</p>
+        <p class="wallet-onboarding-kicker">Connect to enter</p>
         <h1>Connect a wallet to enter the platform.</h1>
-        <p class="lede">MetaMask, Coinbase Wallet, Phantom, or Backpack. This only starts a session. No funds move.</p>
-        <div class="wallet-grid" id="gate-wallets"></div>
-        <p class="error" id="wallet-error" hidden></p>
-        <p class="muted">Core variant. After you connect, only Squid AI is live. Everything else is on squidpay.dev.</p>
+        <p class="wallet-onboarding-copy">
+          MetaMask, Coinbase Wallet, Phantom, or Backpack. This only starts a session. No funds move.
+        </p>
+        <div class="wallet-picker" id="gate-wallets"></div>
+        <p class="wallet-onboarding-status" id="wallet-error" hidden></p>
+        <p class="wallet-onboarding-footnote">
+          Core variant. After you connect, only Squid AI is live. Everything else is on squidpay.dev.
+        </p>
       </div>
-    </div>
+    </section>
 
-    <div class="app" id="app-shell" hidden>
+    <div class="app-shell" id="app-shell" hidden>
       <aside class="sidebar" id="sidebar">
         <a class="brand" href="#/home">
-          <img src="/brand/mark.svg" alt="" width="18" height="18" />
-          <span class="brand-name">Squid</span>
+          <img class="mark" src="/brand/favicon.png" alt="" />
+          <div>
+            <strong>Squid</strong>
+            <span>Core</span>
+          </div>
         </a>
 
-        <button class="agent-select" id="choose-agent" type="button">
-          <span>ops</span>
-          <svg class="chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M4 6.2 8 10l4-3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+        <div class="agent-switcher">
+          <button class="agent-selector" id="choose-agent" type="button">ops</button>
+        </div>
 
-        <nav class="nav" id="nav">
-          <a class="nav-item" data-route="home" href="#/home">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.8 7.1 8 2.8l5.2 4.3V13a.8.8 0 0 1-.8.8H9.4v-3.4H6.6V13.8H3.6A.8.8 0 0 1 2.8 13V7.1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-            Home
+        <nav class="sidebar-nav" id="nav">
+          <a class="nav-button" data-route="home" href="#/home">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2.8 7.1 8 2.8l5.2 4.3V13a.8.8 0 0 1-.8.8H9.4v-3.4H6.6V13.8H3.6A.8.8 0 0 1 2.8 13V7.1Z"/></svg>
+            <span class="nav-label">Home</span>
           </a>
-          <a class="nav-item" data-route="chat" href="#/chat">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.2 3.6h9.6A1.2 1.2 0 0 1 14 4.8v5.4a1.2 1.2 0 0 1-1.2 1.2H8.1L5 13.8v-2.4H3.2A1.2 1.2 0 0 1 2 10.2V4.8A1.2 1.2 0 0 1 3.2 3.6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-            Chat
+          <a class="nav-button" data-route="chat" href="#/chat">
+            <svg class="nav-icon nav-icon-chat" viewBox="0 0 16 16"><path d="M3.2 3.6h9.6A1.2 1.2 0 0 1 14 4.8v5.4a1.2 1.2 0 0 1-1.2 1.2H8.1L5 13.8v-2.4H3.2A1.2 1.2 0 0 1 2 10.2V4.8A1.2 1.2 0 0 1 3.2 3.6Z"/></svg>
+            <span class="nav-label">Chat</span>
           </a>
-          <a class="nav-item" data-route="money" href="#/money">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.15" stroke="currentColor" stroke-width="1.3"/></svg>
-            Money
+          <a class="nav-button" data-route="money" href="#/money">
+            <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.15"/></svg>
+            <span class="nav-label">Money</span>
           </a>
-          <a class="nav-item" data-route="holds" href="#/holds">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.15" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="1.35" fill="currentColor"/></svg>
-            Needs Review
+          <a class="nav-button" data-route="holds" href="#/holds">
+            <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.15"/><circle cx="8" cy="8" r="1.35" fill="currentColor" stroke="none"/></svg>
+            <span class="nav-label">Needs Review</span>
           </a>
-          <a class="nav-item" data-route="agents" href="#/agents">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.3c.18 2.5 1.3 3.62 3.8 3.8-2.5.18-3.62 1.3-3.8 3.8-.18-2.5-1.3-3.62-3.8-3.8 2.5-.18 3.62-1.3 3.8-3.8Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-            Agents
+          <a class="nav-button" data-route="agents" href="#/agents">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 2.3c.18 2.5 1.3 3.62 3.8 3.8-2.5.18-3.62 1.3-3.8 3.8-.18-2.5-1.3-3.62-3.8-3.8 2.5-.18 3.62-1.3 3.8-3.8Z"/></svg>
+            <span class="nav-label">Agents</span>
           </a>
-          <a class="nav-item" data-route="activity" href="#/activity">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.6" y="2.6" width="4.2" height="4.2" rx=".7" stroke="currentColor" stroke-width="1.25"/><rect x="9.2" y="2.6" width="4.2" height="4.2" rx=".7" stroke="currentColor" stroke-width="1.25"/><rect x="2.6" y="9.2" width="4.2" height="4.2" rx=".7" stroke="currentColor" stroke-width="1.25"/><rect x="9.2" y="9.2" width="4.2" height="4.2" rx=".7" stroke="currentColor" stroke-width="1.25"/></svg>
-            Activity
+          <a class="nav-button" data-route="activity" href="#/activity">
+            <svg class="nav-icon" viewBox="0 0 16 16"><rect x="2.6" y="2.6" width="4.2" height="4.2"/><rect x="9.2" y="2.6" width="4.2" height="4.2"/><rect x="2.6" y="9.2" width="4.2" height="4.2"/><rect x="9.2" y="9.2" width="4.2" height="4.2"/></svg>
+            <span class="nav-label">Activity</span>
           </a>
         </nav>
 
-        <div class="sidebar-foot">
-          <a class="nav-item" data-route="cli" href="#/cli">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.4 5.2 6.6 8 3.4 10.8M8.2 11.2H12.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Squid CLI
+        <div class="sidebar-footer">
+          <a class="nav-button" data-route="cli" href="#/cli">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3.4 5.2 6.6 8 3.4 10.8M8.2 11.2H12.6"/></svg>
+            <span class="nav-label">Squid CLI</span>
           </a>
-          <a class="nav-item" data-route="settings" href="#/settings">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="2.05" stroke="currentColor" stroke-width="1.25"/><path d="M8 2.6v1.5M8 11.9v1.5M2.6 8h1.5M11.9 8h1.5M4.15 4.15l1.06 1.06M10.79 10.79l1.06 1.06M4.15 11.85l1.06-1.06M10.79 5.21l1.06-1.06" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
-            Settings
+          <a class="nav-button" data-route="settings" href="#/settings">
+            <svg class="nav-icon nav-icon-settings" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.05"/><path d="M8 2.6v1.5M8 11.9v1.5M2.6 8h1.5M11.9 8h1.5M4.15 4.15l1.06 1.06M10.79 10.79l1.06 1.06M4.15 11.85l1.06-1.06M10.79 5.21l1.06-1.06"/></svg>
+            <span class="nav-label">Settings</span>
           </a>
-          <a class="nav-item" data-route="help" href="#/help">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5.15" stroke="currentColor" stroke-width="1.3"/><path d="M6.45 6.35a1.55 1.55 0 1 1 2.05 1.47c-.55.28-.9.7-.9 1.28M8 11.35v.15" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
-            Help
+          <a class="nav-button" data-route="help" href="#/help">
+            <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.15"/><path d="M6.45 6.35a1.55 1.55 0 1 1 2.05 1.47c-.55.28-.9.7-.9 1.28M8 11.35v.15"/></svg>
+            <span class="nav-label">Help</span>
           </a>
-          <button class="nav-item logout" id="disconnect-btn" type="button">
-            <svg class="nav-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6.4 8h6.4M10.6 5.4 13.2 8l-2.6 2.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.1 4H4.4A1.2 1.2 0 0 0 3.2 5.2v5.6A1.2 1.2 0 0 0 4.4 12H9.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Log out
+          <button class="nav-button" id="disconnect-btn" type="button">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M6.4 8h6.4M10.6 5.4 13.2 8l-2.6 2.6"/><path d="M9.1 4H4.4A1.2 1.2 0 0 0 3.2 5.2v5.6A1.2 1.2 0 0 0 4.4 12H9.1"/></svg>
+            <span class="nav-label">Log out</span>
           </button>
         </div>
       </aside>
 
-      <div class="main">
+      <div class="main-column">
         <header class="topbar" id="topbar">
-          <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-label="Open menu">☰</button>
-          <div class="balance" id="top-balance">$0.00</div>
-          <div class="topbar-actions">
-            <button class="icon-btn search-btn" type="button" aria-label="Search">
-              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="3.5" stroke="currentColor" stroke-width="1.35"/><path d="m10.1 10.1 3 3" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
-            </button>
+          <div class="balance-header">
+            <h1 id="top-balance">$0.00</h1>
+            <div class="balance-meta">
+              <span class="meta-chip" id="wallet-chip">Signed in with wallet.</span>
+            </div>
+          </div>
+          <div class="top-actions">
+            <button class="icon-btn" id="menu-btn" type="button" aria-label="Open menu">☰</button>
           </div>
         </header>
-        <div class="session-strip" role="status">
-          <p id="wallet-chip">Signed in with wallet.</p>
-        </div>
-        <main class="content" id="content"></main>
+        <main id="content"></main>
       </div>
     </div>
 
     <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
-    <div class="modal-backdrop" id="modal-backdrop" hidden></div>
-    <div class="modal" id="modal" hidden></div>
+    <div class="app-modal" id="modal" hidden>
+      <div class="app-modal-backdrop" id="modal-backdrop"></div>
+      <div class="app-modal-card" id="modal-card"></div>
+    </div>
 
     <script src="/wallets.js"></script>
     <script src="/app.js"></script>
