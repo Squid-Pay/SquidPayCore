@@ -30,6 +30,19 @@ function shortAddress(address) {
   return address.length <= 12 ? address : `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+function shortWallet(address) {
+  if (!address) return "—";
+  return address.length <= 10 ? address : `${address.slice(0, 4)}…${address.slice(-4)}`;
+}
+
+const ICO = {
+  plus: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3.2v9.6M3.2 8h9.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  send: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.1 8h9.8M9.4 4.7 13 8l-3.6 3.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  spark: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.2c.16 2.3 1.18 3.32 3.48 3.48C8.18 5.84 7.16 6.86 7 9.16 6.84 6.86 5.82 5.84 3.52 5.68 5.82 5.52 6.84 4.5 7 2.2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+  refresh: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.1 8A5.1 5.1 0 1 1 11.6 4.5M13.2 2.8v3.2h-3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  copy: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5.4" y="5.4" width="7.2" height="7.2" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M3.6 10.2V4.8A1.2 1.2 0 0 1 4.8 3.6h5.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+};
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -46,9 +59,9 @@ function isConnected() {
   if (isPreview() && !state.session.connected) {
     state.session = {
       connected: true,
-      provider: "metamask",
-      address: "0x8a3fc41d708d33aabb",
-      chain: "evm"
+      provider: "email",
+      address: "3SquidPayCoreDemo111111111111111111112",
+      chain: "solana"
     };
   }
   return Boolean(state.session?.connected && state.session.address);
@@ -65,7 +78,8 @@ const PROVIDER_LABELS = {
   metamask: "MetaMask",
   coinbase: "Coinbase Wallet",
   phantom: "Phantom",
-  backpack: "Backpack"
+  backpack: "Backpack",
+  email: "email"
 };
 
 function setChrome() {
@@ -148,51 +162,54 @@ async function refreshSession() {
 }
 
 function renderHome() {
-  const session = state.session;
+  const address = state.session.address || "";
   content.innerHTML = `
     <div class="actions">
-      <button class="btn-blue" data-core="Deposit" type="button">Deposit <span class="key">D</span></button>
-      <button class="pill" data-core="Send" type="button">Send <span class="key">S</span></button>
-      <button class="pill" id="connect-agent" type="button">Connect agent <span class="key">A</span></button>
+      <button class="btn-blue" data-core="Deposit" type="button">${ICO.plus} Deposit <span class="key">D</span></button>
+      <button class="pill" data-core="Send" type="button">${ICO.send} Send <span class="key">S</span></button>
+      <button class="pill" id="home-agents" type="button">${ICO.spark} Agents <span class="key">A</span></button>
     </div>
-    <section class="stats">
-      <article class="card">
-        <div class="label">Wallets</div>
-        <p class="muted">Balances across your Squid session</p>
-        <div class="wallet-row">
-          <span class="wallet-dot">${escapeHtml((session.provider || "?").slice(0, 1).toUpperCase())}</span>
-          <div>
-            <div>${escapeHtml(session.provider || "wallet")}</div>
-            <div class="mono">${escapeHtml(shortAddress(session.address))}</div>
-          </div>
-          <div style="margin-left:auto">$0.00</div>
-        </div>
-      </article>
-      <article class="card">
-        <div class="label">Available</div>
-        <div class="metric">$0.00</div>
-      </article>
-      <article class="card">
-        <div class="label">Planned payments</div>
-        <div class="metric">$0.00</div>
-      </article>
-      <article class="card">
-        <div class="label">Daily money</div>
-        <p class="muted">Pay people or services with Core talk only</p>
-      </article>
-      <article class="card">
-        <div class="label">Verified payments</div>
-        <div class="metric">0</div>
-      </article>
-      <article class="card">
-        <div class="label">Needs review</div>
-        <div class="metric">0</div>
-      </article>
+    <section class="home-panel">
+      <h2>Squid Wallet</h2>
+      <p class="muted home-sub">Your embedded Squid wallet is created automatically with email login.</p>
+      <div class="wallet-tiles">
+        <article class="wallet-tile">
+          <div class="label">Balance</div>
+          <div class="tile-value">$0.00</div>
+        </article>
+        <article class="wallet-tile">
+          <div class="label">Wallet address</div>
+          <div class="tile-value">${escapeHtml(shortWallet(address))}</div>
+        </article>
+        <article class="wallet-tile">
+          <div class="label">USDC</div>
+          <div class="tile-value">0 USDC</div>
+        </article>
+        <article class="wallet-tile">
+          <div class="label">SOL</div>
+          <div class="tile-value">0 SOL</div>
+        </article>
+      </div>
+      <div class="actions home-wallet-actions">
+        <button class="btn-blue" data-core="Deposit" type="button">${ICO.plus} Deposit</button>
+        <button class="pill" data-core="Refresh" type="button">${ICO.refresh} Refresh</button>
+        <button class="pill" id="copy-address" type="button">${ICO.copy} Copy address</button>
+      </div>
+      <p class="muted home-note">Funds sent to this Solana address appear after a refresh. Squid never holds your private key.</p>
     </section>
-    <section class="card activity-empty">
-      <div>
-        <h3>Recent activity</h3>
-        <p class="muted">Nothing here yet. Records show up after activity on the full platform.</p>
+    <section class="home-panel">
+      <h2>Wallets</h2>
+      <p class="muted home-sub">Balances across your Squid wallet and connected wallets.</p>
+      <div class="linked-wallet">
+        <span class="sol-mark" aria-hidden="true">S</span>
+        <div class="linked-copy">
+          <div class="linked-name">Solana</div>
+          <div class="mono">${escapeHtml(address)} · Squid</div>
+        </div>
+        <div class="linked-right">
+          <div>$0.00</div>
+          <div class="muted">Connected</div>
+        </div>
       </div>
     </section>
   `;
@@ -200,7 +217,20 @@ function renderHome() {
     button.onclick = () =>
       openCoreModal(button.dataset.core, `${button.dataset.core} is full-platform. Core only talks through Squid AI.`);
   });
-  document.getElementById("connect-agent").onclick = openCreateAgent;
+  document.getElementById("home-agents").onclick = openCreateAgent;
+  document.getElementById("copy-address").onclick = async (event) => {
+    const button = event.currentTarget;
+    const original = button.innerHTML;
+    try {
+      await navigator.clipboard.writeText(address);
+      button.textContent = "Copied";
+      setTimeout(() => {
+        button.innerHTML = original;
+      }, 1400);
+    } catch {
+      openCoreModal("Copy address", "Copy the address on the full platform if this browser blocks the clipboard.");
+    }
+  };
 }
 
 function openCreateAgent() {

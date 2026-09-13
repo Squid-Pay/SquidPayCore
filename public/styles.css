@@ -163,7 +163,8 @@ body.on-gate .connect-gate { display: block; }
 .content { padding: 8px 28px 40px; }
 .chat-page .content { padding: 0; }
 
-.actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 18px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 22px; }
+.btn-ico { width: 14px; height: 14px; flex-shrink: 0; }
 .key {
   font-size: 11px;
   color: var(--muted);
@@ -172,6 +173,82 @@ body.on-gate .connect-gate { display: block; }
   padding: 1px 6px;
   font-family: var(--mono);
 }
+
+.home-panel { margin: 0 0 28px; }
+.home-panel h2 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.home-sub { margin: 0 0 14px; font-size: 13px; line-height: 1.45; }
+.home-note { margin: 12px 0 0; font-size: 13px; line-height: 1.45; }
+.home-wallet-actions { margin: 4px 0 0; }
+
+.wallet-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.wallet-tile {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 18px 20px 16px;
+  min-height: 92px;
+}
+.wallet-tile .label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.tile-value {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.linked-wallet {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0 2px;
+}
+.sol-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #12261c;
+  color: #14f195;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  position: relative;
+  flex-shrink: 0;
+}
+.sol-mark::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.linked-copy { min-width: 0; flex: 1; }
+.linked-name { font-size: 14px; font-weight: 500; }
+.linked-copy .mono {
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.linked-right { text-align: right; flex-shrink: 0; font-size: 14px; }
+.linked-right .muted { font-size: 12px; margin-top: 2px; }
 
 .stats {
   display: grid;
@@ -401,6 +478,7 @@ body.on-gate .connect-gate { display: block; }
   .menu-btn { display: inline-flex; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stats .card { width: 100%; height: auto; }
+  .wallet-tiles { grid-template-columns: 1fr; }
   .wallet-grid, .heat, .cli { grid-template-columns: 1fr; }
   .content, .topbar, .connect-gate, .session-strip { padding-left: 16px; padding-right: 16px; }
   .session-strip { margin-left: 16px; margin-right: 16px; }

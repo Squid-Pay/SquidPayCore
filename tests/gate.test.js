@@ -37,6 +37,18 @@ describe("wallet connect gate", () => {
     assert.match(app, /Signed in with/);
   });
 
+  it("renders the Squid Wallet home panel instead of metric cards", () => {
+    assert.match(app, /Squid Wallet/);
+    assert.match(app, /Your embedded Squid wallet is created automatically with email login/);
+    assert.match(app, /Copy address/);
+    assert.match(app, /Balances across your Squid wallet and connected wallets/);
+    assert.match(app, /id="home-agents"/);
+    assert.match(app, /Agents <span class="key">A<\/span>/);
+    assert.doesNotMatch(app, /Connect agent/);
+    assert.doesNotMatch(app, /Recent activity/);
+    assert.doesNotMatch(app, /Planned payments/);
+  });
+
   it("stacks connect-gate wallets in one column", () => {
     const block = css.match(/\.wallet-grid\s*\{[^}]+\}/)?.[0] || "";
     assert.match(html, /class="wallet-grid" id="gate-wallets"/);
