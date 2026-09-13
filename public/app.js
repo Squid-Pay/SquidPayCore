@@ -60,7 +60,7 @@ function isConnected() {
     state.session = {
       connected: true,
       provider: "email",
-      address: "3SquidPayCoreDemo111111111111111111112",
+      address: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
       chain: "solana"
     };
   }
@@ -201,7 +201,9 @@ function renderHome() {
       <h2>Wallets</h2>
       <p class="muted home-sub">Balances across your Squid wallet and connected wallets.</p>
       <div class="linked-wallet">
-        <span class="sol-mark" aria-hidden="true">S</span>
+        <span class="sol-mark" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3.2 4.15h8.3L10 5.85H1.7L3.2 4.15Zm0 5.99h8.3L10 11.84H1.7L3.2 10.14Zm9.6-3.08H4.5L6 5.36h8.3L12.8 7.06Z" fill="currentColor"/></svg>
+        </span>
         <div class="linked-copy">
           <div class="linked-name">Solana</div>
           <div class="mono">${escapeHtml(address)} · Squid</div>
@@ -221,16 +223,34 @@ function renderHome() {
   document.getElementById("copy-address").onclick = async (event) => {
     const button = event.currentTarget;
     const original = button.innerHTML;
-    try {
-      await navigator.clipboard.writeText(address);
-      button.textContent = "Copied";
-      setTimeout(() => {
-        button.innerHTML = original;
-      }, 1400);
-    } catch {
+    const copied = await copyText(address);
+    if (!copied) {
       openCoreModal("Copy address", "Copy the address on the full platform if this browser blocks the clipboard.");
+      return;
     }
+    button.textContent = "Copied";
+    setTimeout(() => {
+      button.innerHTML = original;
+    }, 1400);
   };
+}
+
+async function copyText(value) {
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    const field = document.createElement("textarea");
+    field.value = value;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.left = "-9999px";
+    document.body.appendChild(field);
+    field.select();
+    const ok = document.execCommand("copy");
+    field.remove();
+    return ok;
+  }
 }
 
 function openCreateAgent() {

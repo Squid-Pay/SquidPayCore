@@ -31,8 +31,8 @@ describe("wallet connect gate", () => {
     assert.match(html, /id="wallet-chip"/);
     assert.match(html, /Signed in with wallet/);
     assert.match(css, /--blue:\s*#3b82f6/i);
-    const strip = css.match(/\.session-strip\s*\{[^}]+\}/)?.[0] || "";
-    assert.match(strip, /border-left:\s*2px\s+solid\s+var\(--blue\)/);
+    const stripText = css.match(/\.session-strip p\s*\{[^}]+\}/)?.[0] || "";
+    assert.match(stripText, /border-left:\s*2px\s+solid\s+var\(--blue\)/);
     assert.match(app, /class="btn-blue" data-core="Deposit"/);
     assert.match(app, /Signed in with/);
   });
