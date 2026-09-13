@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 describe("wallet connect gate", () => {
   const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
   const app = readFileSync(new URL("../public/app.js", import.meta.url), "utf8");
   const css = readFileSync(new URL("../public/styles.css", import.meta.url), "utf8");
+
+  it("uses the Squid icon as the app favicon", () => {
+    assert.match(html, /rel="icon" href="\/favicon.ico"/);
+    assert.match(html, /href="\/brand\/favicon.png"/);
+    assert.doesNotMatch(html, /rel="icon" href="\/brand\/mark.svg"/);
+    assert.equal(existsSync(new URL("../public/favicon.ico", import.meta.url)), true);
+    assert.equal(existsSync(new URL("../public/brand/favicon.png", import.meta.url)), true);
+  });
 
   it("shows a connect screen before the platform shell", () => {
     assert.match(html, /id="connect-gate"/);
