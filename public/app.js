@@ -10,7 +10,8 @@ const state = {
   route: "home",
   cliLog: [],
   cliTutorial: { open: true, step: 0 },
-  chat: []
+  chat: [],
+  activity: []
 };
 
 const content = document.getElementById("content");
@@ -434,26 +435,156 @@ function renderAgents() {
   corePage("Agents", `<div class="empty"><strong>No agents</strong>Create agents on the full platform.</div>`);
 }
 
-function renderActivity() {
-  corePage(
-    "Activity",
-    `
-    <div class="grid">
-      <article class="metric"><span>Busiest when</span><strong>—</strong></article>
-      <article class="metric"><span>Busiest where</span><strong>Chat</strong></article>
-      <article class="metric"><span>Logged events</span><strong>0</strong></article>
-    </div>
-    <section class="band">
-      <div class="section-head"><div><h3>Activity log</h3><p>When and where the most activity happens</p></div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Area</th><th>Time</th><th>From</th><th>Action</th><th>Outcome</th><th>Why</th></tr></thead>
-          <tbody><tr><td colspan="6">Nothing here yet.</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-  `
+const ACTIVITY_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const ACTIVITY_DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const ACTIVITY_AREAS = [
+  { id: "trading", label: "Trading" },
+  { id: "payments", label: "Payments" },
+  { id: "approvals", label: "Approvals" },
+  { id: "issuing", label: "Issuing" },
+  { id: "rules", label: "Rules" },
+  { id: "agents", label: "Agents" },
+  { id: "billing", label: "Billing" },
+  { id: "issues", label: "Issues" }
+];
+
+function activityStats() {
+  const heat = ACTIVITY_DAYS.map(() => Array(24).fill(0));
+  const where = Object.fromEntries(ACTIVITY_AREAS.map((area) => [area.id, 0]));
+  const events = Array.isArray(state.activity) ? state.activity : [];
+  events.forEach((event) => {
+    const when = new Date(event.at || Date.now());
+    heat[when.getDay()][when.getHours()] += 1;
+    if (where[event.area] != null) where[event.area] += 1;
+  });
+  let peakDay = 0;
+  let peakHour = 0;
+  let peakCount = 0;
+  heat.forEach((row, day) => {
+    row.forEach((count, hour) => {
+      if (count > peakCount) {
+        peakCount = count;
+        peakDay = day;
+        peakHour = hour;
+      }
+    });
+  });
+  const topArea = ACTIVITY_AREAS.reduce(
+    (best, area) => (where[area.id] > (where[best] || 0) ? area.id : best),
+    ""
   );
+  const topCount = topArea ? where[topArea] : 0;
+  const nextHour = String((peakHour + 1) % 24).padStart(2, "0");
+  return {
+    events: events.length,
+    heat,
+    where,
+    whenTitle: peakCount ? `${ACTIVITY_DAY_NAMES[peakDay]} ${String(peakHour).padStart(2, "0")}:00–${nextHour}:00` : "—",
+    whenDetail: peakCount ? `${peakCount} event${peakCount === 1 ? "" : "s"} in that hour` : "No events in this view",
+    whereTitle: topCount ? ACTIVITY_AREAS.find((area) => area.id === topArea).label : "—",
+    whereDetail: topCount ? `${topCount} event${topCount === 1 ? "" : "s"} in ${ACTIVITY_AREAS.find((area) => area.id === topArea).label}` : "No events in this view"
+  };
+}
+
+function renderHeatmap(heat) {
+  const rows = ACTIVITY_DAYS.map((day, dayIndex) => {
+    const cells = heat[dayIndex]
+      .map((count, hour) => {
+        const level = count <= 0 ? 0 : Math.min(4, count);
+        return `<i class="heat-cell level-${level}" title="${day} ${String(hour).padStart(2, "0")}:00 · ${count}"></i>`;
+      })
+      .join("");
+    return `<span class="heat-day">${day}</span>${cells}`;
+  }).join("");
+  return `
+    <div class="heat-grid">${rows}</div>
+    <div class="heat-hours">
+      <span class="heat-day"></span>
+      <div class="heat-hours-scale"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
+    </div>
+    <p class="heat-legend"><span>Less</span><i class="heat-cell"></i><i class="heat-cell level-1"></i><i class="heat-cell level-2"></i><i class="heat-cell level-3"></i><i class="heat-cell level-4"></i><span>More</span></p>
+  `;
+}
+
+function renderWhereBars(where) {
+  const max = Math.max(1, ...ACTIVITY_AREAS.map((area) => where[area.id] || 0));
+  return ACTIVITY_AREAS.map((area) => {
+    const count = where[area.id] || 0;
+    return `
+      <div class="where-row">
+        <span>${escapeHtml(area.label)}</span>
+        <span class="where-track"><i style="width:${(count / max) * 100}%"></i></span>
+        <strong>${count}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderActivity() {
+  const stats = activityStats();
+  content.innerHTML = `
+    <div class="view activity-page">
+      <section class="band intensity-band">
+        <div class="section-head">
+          <div>
+            <h2>Trade intensity</h2>
+            <p>When and where the most activity happens</p>
+          </div>
+        </div>
+        <div class="grid">
+          <article class="metric"><span>Busiest when</span><strong>${escapeHtml(stats.whenTitle)}</strong><p>${escapeHtml(stats.whenDetail)}</p></article>
+          <article class="metric"><span>Busiest where</span><strong>${escapeHtml(stats.whereTitle)}</strong><p>${escapeHtml(stats.whereDetail)}</p></article>
+          <article class="metric"><span>Logged events</span><strong>${stats.events}</strong><p>From the Activity log in this view</p></article>
+        </div>
+        <div class="intensity-charts">
+          <div>
+            <h3>When</h3>
+            <p>Day of week × hour — darker cells are busier</p>
+            ${renderHeatmap(stats.heat)}
+          </div>
+          <div>
+            <h3>Where</h3>
+            <p>Which console area has the most activity</p>
+            <div class="where-list">${renderWhereBars(stats.where)}</div>
+          </div>
+        </div>
+      </section>
+      <section class="band">
+        <p class="notice visible">Core variant</p>
+        <div class="section-head">
+          <div>
+            <h2>Activity</h2>
+            <p>This is a Squid Pay Core variant. Only Squid AI / Chat works here. Activity lives on the full console.</p>
+          </div>
+        </div>
+        <div class="actions">
+          <a href="${FULL}" target="_blank" rel="noreferrer"><button class="primary" type="button">Open Squid Pay</button></a>
+          <a href="#/chat"><button type="button">Talk to Squid AI</button></a>
+        </div>
+      </section>
+      <section class="band">
+        <div class="section-head">
+          <div>
+            <h3>Activity log</h3>
+          </div>
+          <label class="activity-filter">Show
+            <select id="activity-filter">
+              <option value="all" selected>all</option>
+              ${ACTIVITY_AREAS.map((area) => `<option value="${escapeHtml(area.id)}">${escapeHtml(area.label)}</option>`).join("")}
+            </select>
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Area</th><th>Time</th><th>Workspace</th><th>From</th><th>Action</th><th>Outcome</th><th>Why</th></tr></thead>
+            <tbody><tr><td colspan="7">Nothing here yet.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  `;
+  document.getElementById("activity-filter").onchange = () =>
+    openCoreModal("Activity filter", "The full activity log lives on squidpay.dev. Core only talks through Squid AI.");
 }
 
 const CLI_COMMANDS = [

@@ -255,6 +255,136 @@ button.cli-button { background: transparent; cursor: pointer; }
   }
 }
 
+.intensity-band .metric p {
+  margin: 6px 0 0;
+}
+
+.intensity-charts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.7fr);
+  gap: 22px;
+  margin-top: 18px;
+}
+
+.intensity-charts h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.intensity-charts > div > p {
+  margin: 4px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.heat-grid {
+  display: grid;
+  grid-template-columns: 28px repeat(24, minmax(0, 1fr));
+  gap: 3px;
+  align-items: center;
+}
+
+.heat-day {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.heat-cell {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 10px;
+  background: var(--bg-muted);
+}
+
+.heat-cell.level-1 { background: color-mix(in srgb, var(--accent) 28%, var(--bg-muted)); }
+.heat-cell.level-2 { background: color-mix(in srgb, var(--accent) 48%, var(--bg-muted)); }
+.heat-cell.level-3 { background: color-mix(in srgb, var(--accent) 72%, var(--bg-muted)); }
+.heat-cell.level-4 { background: var(--accent); }
+
+.heat-hours {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.heat-hours-scale {
+  display: flex;
+  justify-content: space-between;
+}
+
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.heat-legend .heat-cell {
+  width: 10px;
+  min-height: 10px;
+  flex: 0 0 10px;
+}
+
+.where-list {
+  display: grid;
+  gap: 8px;
+}
+
+.where-row {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) 18px;
+  gap: 10px;
+  align-items: center;
+}
+
+.where-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.where-track {
+  display: block;
+  height: 6px;
+  background: var(--bg-muted);
+}
+
+.where-track i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.where-row strong {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.activity-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.activity-filter select {
+  min-height: 36px;
+  padding: 0 10px;
+}
+
+@media (max-width: 860px) {
+  .intensity-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
 a.nav-button,
 a.brand { text-decoration: none; color: inherit; }
 #menu-btn { display: none; }

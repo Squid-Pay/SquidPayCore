@@ -104,6 +104,20 @@ describe("wallet connect gate", () => {
     assert.doesNotMatch(app, /horatiucode/);
   });
 
+  it("puts Trade intensity above the existing Activity log", () => {
+    assert.match(app, /Trade intensity/);
+    assert.match(app, /Day of week × hour/);
+    assert.match(app, /Which console area has the most activity/);
+    assert.match(app, /heat-grid/);
+    assert.match(app, /where-list/);
+    assert.match(app, /Activity log/);
+    assert.match(app, /Show/);
+    const intensityAt = app.indexOf("<h2>Trade intensity</h2>");
+    const coreAt = app.indexOf("Only Squid AI / Chat works here. Activity lives");
+    const logAt = app.indexOf("<h3>Activity log</h3>");
+    assert.ok(intensityAt > 0 && intensityAt < coreAt && coreAt < logAt);
+  });
+
   it("fills Settings from the signed-in session instead of a sample profile", () => {
     assert.match(app, /function profileFromSession/);
     assert.match(app, /Profile picture/);
