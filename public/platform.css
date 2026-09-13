@@ -507,22 +507,38 @@ body:not(.app-booting) .app-boot-screen {
 
 .wallet-picker {
   display: grid;
+  width: 100%;
   gap: 10px;
 }
 
-.phantom-connect {
+.wallet-picker button {
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
+  height: 52px;
   min-height: 52px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   border: 0;
   border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wallet-picker button > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phantom-connect {
   background: #ab9ff2;
   color: #17132a;
-  font-weight: 700;
-  cursor: pointer;
 }
 
 .phantom-connect:hover {
@@ -556,40 +572,33 @@ body:not(.app-booting) .app-boot-screen {
   background: #2d66f4;
 }
 
-.metamask-connect-icon {
+.metamask-connect-icon,
+.coinbase-connect-icon,
+.backpack-connect-icon,
+.phantom-connect-icon {
+  flex: 0 0 26px;
+  display: inline-grid;
   width: 26px;
   height: 26px;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.metamask-connect-icon {
   object-fit: contain;
 }
 
-.coinbase-connect-icon {
-  display: inline-grid;
-  width: 25px;
-  height: 25px;
-  place-items: center;
+.coinbase-connect-icon,
+.phantom-connect-icon {
   border: 2px solid currentColor;
   border-radius: 50%;
-  font-size: 14px;
-  font-weight: 800;
 }
 
 .backpack-connect-icon {
-  display: inline-grid;
-  width: 25px;
-  height: 25px;
-  place-items: center;
   border: 2px solid currentColor;
   border-radius: 8px;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.phantom-connect-icon {
-  width: 26px;
-  height: 26px;
-  object-fit: cover;
-  object-position: center;
-  border-radius: 50%;
 }
 
 .wallet-onboarding-status {

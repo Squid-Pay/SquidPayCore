@@ -64,8 +64,13 @@ describe("wallet connect gate", () => {
 
   it("stacks connect-gate wallets in one column", () => {
     const block = css.match(/\.wallet-picker\s*\{[^}]+\}/)?.[0] || "";
+    const buttons = css.match(/\.wallet-picker button\s*\{[^}]+\}/)?.[0] || "";
     assert.match(html, /class="wallet-picker" id="gate-wallets"/);
     assert.match(block, /display:\s*grid/);
+    assert.match(block, /width:\s*100%/);
+    assert.match(buttons, /width:\s*100%/);
+    assert.match(buttons, /height:\s*52px/);
+    assert.match(buttons, /min-height:\s*52px/);
   });
 
   it("uses the platform theme tokens and CLI chrome", () => {
