@@ -80,6 +80,7 @@ describe("wallet connect gate", () => {
     assert.match(css, /\.cli-topbar\s*\{/);
     assert.match(css, /\.cli-console\s*\{/);
     assert.match(css, /\.cli-tutorial\s*\{/);
+    assert.match(css, /\.heat-grid\s*\{[^}]*11px/);
     assert.match(app, /class="cli-layout"/);
     assert.match(app, /Platform CLI/);
     assert.match(app, /squid status/);
