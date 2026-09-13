@@ -214,11 +214,6 @@ function renderHome() {
           <article class="metric"><span>USDC</span><strong>0 USDC</strong></article>
           <article class="metric"><span>SOL</span><strong>0 SOL</strong></article>
         </div>
-        <div class="squid-wallet-actions">
-          <button class="primary" data-core="Deposit" type="button">${ICO.plus} Deposit</button>
-          <button data-core="Refresh" type="button">${ICO.refresh} Refresh</button>
-          <button id="copy-address" type="button">${ICO.copy} Copy address</button>
-        </div>
         <p class="deposit-warning">Funds sent to this Solana address appear after a refresh. Squid never holds your private key.</p>
       </section>
       <section class="band">
@@ -246,37 +241,6 @@ function renderHome() {
       openCoreModal(button.dataset.core, `${button.dataset.core} is full-platform. Core only talks through Squid AI.`);
   });
   document.getElementById("home-agents").onclick = openCreateAgent;
-  document.getElementById("copy-address").onclick = async (event) => {
-    const button = event.currentTarget;
-    const original = button.innerHTML;
-    const copied = await copyText(address);
-    if (!copied) {
-      openCoreModal("Copy address", "Copy the address on the full platform if this browser blocks the clipboard.");
-      return;
-    }
-    button.textContent = "Copied";
-    setTimeout(() => {
-      button.innerHTML = original;
-    }, 1400);
-  };
-}
-
-async function copyText(value) {
-  try {
-    await navigator.clipboard.writeText(value);
-    return true;
-  } catch {
-    const field = document.createElement("textarea");
-    field.value = value;
-    field.setAttribute("readonly", "");
-    field.style.position = "fixed";
-    field.style.left = "-9999px";
-    document.body.appendChild(field);
-    field.select();
-    const ok = document.execCommand("copy");
-    field.remove();
-    return ok;
-  }
 }
 
 function openCreateAgent() {

@@ -50,7 +50,10 @@ describe("wallet connect gate", () => {
   it("renders the Squid Wallet home panel instead of metric cards", () => {
     assert.match(app, /Squid Wallet/);
     assert.match(app, /Your embedded Squid wallet is created automatically with email login/);
-    assert.match(app, /Copy address/);
+    assert.match(app, /data-core="Deposit"/);
+    assert.match(app, /data-core="Send"/);
+    assert.doesNotMatch(app, /Copy address/);
+    assert.doesNotMatch(app, /squid-wallet-actions/);
     assert.match(app, /Balances across your Squid wallet and connected wallets/);
     assert.match(app, /id="home-agents"/);
     assert.match(app, /Agents <kbd>A<\/kbd>/);
