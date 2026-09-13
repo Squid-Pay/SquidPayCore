@@ -92,6 +92,18 @@ describe("wallet connect gate", () => {
     assert.match(app, /Talk to Squid AI/);
   });
 
+  it("renders the product Squid AI empty state with example actions", () => {
+    assert.match(app, /chat-message chat-welcome/);
+    assert.match(app, /Example actions/);
+    assert.match(app, /What can ops do\?/);
+    assert.match(app, /Portfolio scan/);
+    assert.match(app, /Prepare a payment, trade, automation, or token/);
+    assert.match(app, /class="chat-attach"/);
+    assert.match(app, /class="primary chat-send"/);
+    assert.doesNotMatch(app, /Talk only on Core/);
+    assert.doesNotMatch(app, /horatiucode/);
+  });
+
   it("fills Settings from the signed-in session instead of a sample profile", () => {
     assert.match(app, /function profileFromSession/);
     assert.match(app, /Profile picture/);

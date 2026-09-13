@@ -10,13 +10,7 @@ const state = {
   route: "home",
   cliLog: [],
   cliTutorial: { open: true, step: 0 },
-  chat: [
-    {
-      role: "assistant",
-      content:
-        "I am Squid AI. This Core console only lets me talk. Money, agents, review, CLI, and the rest stay on squidpay.dev."
-    }
-  ]
+  chat: []
 };
 
 const content = document.getElementById("content");
@@ -106,7 +100,9 @@ const PROVIDER_LABELS = {
 function setChrome() {
   if (!isConnected()) return;
   const provider = PROVIDER_LABELS[state.session.provider] || "wallet";
-  document.getElementById("wallet-chip").textContent = `Signed in with ${provider}.`;
+  const onChat = state.route === "chat" || state.route === "ai";
+  document.getElementById("top-balance").textContent = onChat ? "ops" : "$0.00";
+  document.getElementById("wallet-chip").textContent = onChat ? "0 USDC" : `Signed in with ${provider}.`;
   document.querySelectorAll(".nav-button").forEach((item) => {
     const route = item.dataset.route;
     item.classList.toggle("active", route === state.route || (state.route === "ai" && route === "chat"));
@@ -270,40 +266,106 @@ function openCreateAgent() {
   document.getElementById("modal-x").onclick = closeModal;
 }
 
+const CHAT_EXAMPLES = [
+  { title: "Portfolio scan", detail: "See all your balances at a glance.", prompt: "Scan my portfolio and summarize all balances." },
+  { title: "Swap", detail: "Swap via Jupiter (Solana) or 0x (EVM).", prompt: "Prepare a swap via Jupiter or 0x." },
+  { title: "Open perp position", detail: "Trade perpetual futures.", prompt: "Prepare an open perp position draft." },
+  { title: "Add to OpenClaw", detail: "Use your agent in other clients.", prompt: "Add this ops agent to OpenClaw." },
+  { title: "Create automation", detail: "Draft a daily cron in Automations.", prompt: "Draft a daily automation." },
+  { title: "Create token", detail: "Deploy an ERC-20 on Base.", prompt: "Prepare an ERC-20 token draft on Base." }
+];
+
+function chatWelcomeText() {
+  const profile = profileFromSession();
+  const hi = profile.name ? `Hi ${profile.name}` : "Hi";
+  return `${hi} — I'm Squid, your single Chat assistant while ops is active. AI actions are off, but you can still prepare a payment, trade, automation, or token draft here. You can also drag and drop images here.`;
+}
+
 function renderChat() {
+  const hasUser = state.chat.some((msg) => msg.role === "user");
   const bubbles = state.chat
     .map(
       (msg) =>
-        `<div class="chat-message ${msg.role}"><strong>${msg.role === "user" ? "You" : "Squid AI"}</strong><p>${escapeHtml(msg.content)}</p></div>`
+        `<div class="chat-message ${msg.role}"><strong>${msg.role === "user" ? "You" : "Squid"}</strong><p>${escapeHtml(msg.content)}</p></div>`
     )
     .join("");
-  content.innerHTML = `
-    <section class="chat-panel">
+  const welcome = hasUser
+    ? ""
+    : `
+      <div class="chat-message chat-welcome" id="chat-welcome">
+        <strong>Squid</strong>
+        <p id="chat-welcome-text">${escapeHtml(chatWelcomeText())}</p>
+      </div>
+    `;
+  const examples = hasUser
+    ? ""
+    : `
       <div class="chat-examples">
         <div class="chat-examples-head">
-          <p class="eyebrow">Squid AI</p>
-          <h3>Talk only on Core</h3>
-          <p>Money, agents, review, and CLI stay on the full platform.</p>
+          <p class="eyebrow">Example actions</p>
+          <h3>What can ops do?</h3>
+          <p>Pick an action, tweak the prompt if needed, then hit send.</p>
         </div>
         <div class="chat-examples-grid">
-          <button class="chat-example-card" data-prompt="What can Core do?" type="button"><strong>What can Core do?</strong><span>Live talk. Everything else is gated.</span></button>
-          <button class="chat-example-card" data-prompt="Which wallet is connected?" type="button"><strong>Which wallet is connected?</strong><span>Read the Core session.</span></button>
-          <button class="chat-example-card" data-prompt="Create an agent and send a payment." type="button"><strong>Agents and payments</strong><span>Those live on squidpay.dev.</span></button>
+          ${CHAT_EXAMPLES.map(
+            (item) =>
+              `<button class="chat-example-card" data-prompt="${escapeHtml(item.prompt)}" type="button"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail)}</span></button>`
+          ).join("")}
         </div>
+        <ol class="chat-examples-steps">
+          <li><span>1</span> Choose an action</li>
+          <li><span>2</span> Review the prompt</li>
+          <li><span>3</span> Press send</li>
+        </ol>
       </div>
-      <div class="chat-thread" id="thread">${bubbles}</div>
+    `;
+  content.innerHTML = `
+    <section class="chat-panel" id="chat-panel">
+      <div class="chat-dropzone" id="chat-dropzone">
+        <strong>Drop an image</strong>
+        <span>Image drafts stay on the full platform.</span>
+      </div>
+      <div class="chat-thread" id="thread">${welcome}${examples}${bubbles}</div>
       <form class="chat-composer" id="chat-form">
-        <input name="message" placeholder="Talk to Squid AI…" autocomplete="off" />
-        <button class="primary chat-send" type="submit">Send</button>
+        <button class="chat-attach" id="chat-attach" type="button" aria-label="Attach">+</button>
+        <input name="message" id="chat-input" placeholder="Prepare a payment, trade, automation, or token" autocomplete="off" />
+        <button class="primary chat-send" type="submit" aria-label="Send">
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.2 8h9.4M9.2 4.6 12.8 8 9.2 11.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </form>
     </section>
   `;
   const thread = document.getElementById("thread");
   thread.scrollTop = thread.scrollHeight;
+  const input = document.getElementById("chat-input");
   document.getElementById("chat-form").addEventListener("submit", onChatSubmit);
-  content.querySelectorAll("[data-prompt]").forEach((button) => {
-    button.addEventListener("click", () => sendChat(button.dataset.prompt));
+  document.getElementById("chat-attach").onclick = () =>
+    openCoreModal("Attach image", "Image attach is full-platform. Core only talks through Squid AI.");
+  const panel = document.getElementById("chat-panel");
+  ["dragenter", "dragover"].forEach((type) => {
+    panel.addEventListener(type, (event) => {
+      event.preventDefault();
+      panel.classList.add("is-dragging");
+    });
   });
+  ["dragleave", "drop"].forEach((type) => {
+    panel.addEventListener(type, (event) => {
+      event.preventDefault();
+      panel.classList.remove("is-dragging");
+      if (type === "drop") {
+        openCoreModal("Attach image", "Image attach is full-platform. Core only talks through Squid AI.");
+      }
+    });
+  });
+  content.querySelectorAll("[data-prompt]").forEach((button) => {
+    button.addEventListener("click", () => {
+      content.querySelectorAll(".chat-example-card").forEach((card) => card.classList.remove("selected"));
+      button.classList.add("selected");
+      input.value = button.dataset.prompt;
+      input.focus();
+    });
+  });
+  requestAnimationFrame(() => document.getElementById("chat-welcome")?.classList.add("is-visible"));
 }
 
 async function onChatSubmit(event) {
