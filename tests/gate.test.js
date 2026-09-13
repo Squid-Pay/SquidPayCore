@@ -38,9 +38,9 @@ describe("wallet connect gate", () => {
     assert.match(html, /class="session-strip"/);
     assert.match(html, /id="wallet-chip"/);
     assert.match(html, /Signed in with wallet/);
-    assert.match(css, /--blue:\s*#3b82f6/i);
+    assert.match(css, /--accent:\s*#2563eb/i);
     const stripText = css.match(/\.session-strip p\s*\{[^}]+\}/)?.[0] || "";
-    assert.match(stripText, /border-left:\s*2px\s+solid\s+var\(--blue\)/);
+    assert.match(stripText, /border-left:\s*2px\s+solid\s+var\(--accent\)/);
     assert.match(app, /class="btn-blue" data-core="Deposit"/);
     assert.match(app, /Signed in with/);
   });
@@ -63,6 +63,18 @@ describe("wallet connect gate", () => {
     assert.match(block, /grid-template-columns:\s*1fr;/);
     assert.doesNotMatch(block, /1fr\s+1fr/);
     assert.match(block, /max-width:\s*420px/);
+  });
+
+  it("uses the platform theme tokens and CLI chrome", () => {
+    assert.match(css, /color-scheme:\s*light/);
+    assert.match(css, /prefers-color-scheme:\s*dark/);
+    assert.match(css, /:root\[data-theme="dark"\]/);
+    assert.match(css, /\.cli-topbar\s*\{/);
+    assert.match(css, /\.cli-console\s*\{/);
+    assert.match(css, /\.cli-tutorial\s*\{/);
+    assert.match(app, /class="cli-layout"/);
+    assert.match(app, /Platform CLI/);
+    assert.match(app, /squid status/);
   });
 
   it("blocks platform routes until a session exists and only Chat talks", () => {

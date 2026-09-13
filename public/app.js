@@ -8,6 +8,8 @@ const FULL = "https://squidpay.dev";
 const state = {
   session: { connected: false },
   route: "home",
+  cliLog: [],
+  cliTutorial: { open: true, step: 0 },
   chat: [
     {
       role: "assistant",
@@ -67,9 +69,27 @@ function isConnected() {
   return Boolean(state.session?.connected && state.session.address);
 }
 
+function applyTheme() {
+  const theme = localStorage.getItem("squid-theme");
+  if (theme === "light" || theme === "dark") {
+    document.documentElement.setAttribute("data-theme", theme);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+}
+
+function cycleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "dark" ? "light" : current === "light" ? "" : "dark";
+  if (next) localStorage.setItem("squid-theme", next);
+  else localStorage.removeItem("squid-theme");
+  applyTheme();
+}
+
 function setShell(connected) {
   document.body.classList.toggle("on-gate", !connected);
   document.body.classList.toggle("chat-page", connected && (state.route === "chat" || state.route === "ai"));
+  document.body.classList.toggle("cli-page", connected && state.route === "cli");
   appShell.hidden = !connected;
   connectGate.hidden = connected;
 }
@@ -413,8 +433,43 @@ function renderActivity() {
   );
 }
 
-function renderCli() {
-  const session = {
+const CLI_COMMANDS = [
+  { label: "Status", command: "squid status" },
+  { label: "Session", command: "squid session" },
+  { label: "Agents", command: "squid agents" },
+  { label: "Holds", command: "squid holds" },
+  { label: "Help", command: "squid help" }
+];
+
+const CLI_TUTORIAL = [
+  {
+    icon: "01",
+    eyebrow: "Platform CLI",
+    title: "Talk to Squid from the terminal.",
+    body: "The native CLI reads your workspace and can draft proposals. On Core, status is live. Money, agents, and signing stay on the full platform.",
+    example: "squid status",
+    hint: "Print the Core session and variant."
+  },
+  {
+    icon: "02",
+    eyebrow: "Human control",
+    title: "The CLI cannot move money here.",
+    body: "Holds, wallet signatures, and transfers never run in this Core shell. Risky work becomes a review item on squidpay.dev.",
+    example: "squid holds",
+    hint: "Opens the full-platform gate from Core."
+  },
+  {
+    icon: "03",
+    eyebrow: "Open the real CLI",
+    title: "Install the platform binary when you need keys.",
+    body: "Core shows the product shape. Production CLI keys, MCP, and write commands live on the private console.",
+    example: "npm i -g @squid-pay/cli",
+    hint: "Available with the full Squid Pay workspace."
+  }
+];
+
+function cliSessionPayload() {
+  return {
     authenticated: true,
     variant: "core",
     access: "Owner session",
@@ -424,23 +479,192 @@ function renderCli() {
     },
     safety: "Read and talk only. Wallet signing and money stay on squidpay.dev."
   };
-  corePage(
-    "Squid CLI",
-    `
-    <section class="cli">
-      <aside class="cli-side">
-        <div class="kicker">Native Squid</div>
-        <h3>Platform CLI</h3>
-        <p class="muted">Read your workspace and create proposals for review. Commands run through Squid.</p>
-        <p class="muted">Human control stays on. The CLI cannot approve holds, sign transactions, or move money on Core.</p>
-      </aside>
-      <div class="cli-main">
-        <div class="cli-cmd">squid@platform · squid status</div>
-        <pre>${escapeHtml(JSON.stringify(session, null, 2))}</pre>
+}
+
+function runCliCommand(raw) {
+  const command = String(raw || "").trim();
+  if (!command) return;
+  const key = command.replace(/^squid\s+/, "").toLowerCase();
+  if (key === "status" || key === "session") {
+    state.cliLog.push({ command, kind: "", output: JSON.stringify(cliSessionPayload(), null, 2) });
+  } else if (key === "help" || key === "--help") {
+    state.cliLog.push({
+      command,
+      kind: "system",
+      output:
+        "Core commands\n  squid status    Session and variant\n  squid session   Connected wallet\n  squid help      This list\n\nFull-platform only\n  squid agents    Create and inspect agents\n  squid holds     Review queue\n\nOpen https://squidpay.dev for the native CLI."
+    });
+  } else if (key === "clear") {
+    state.cliLog = [];
+  } else {
+    state.cliLog.push({
+      command,
+      kind: "error",
+      output: `core: '${command}' is not available in this variant.\nOpen ${FULL} for the platform CLI.`
+    });
+  }
+  renderCli();
+}
+
+function renderCliTutorial() {
+  const tutorial = document.getElementById("cli-tutorial");
+  if (!tutorial) return;
+  const step = CLI_TUTORIAL[state.cliTutorial.step] || CLI_TUTORIAL[0];
+  tutorial.hidden = !state.cliTutorial.open;
+  document.getElementById("cli-tutorial-step").textContent = `Step ${state.cliTutorial.step + 1} of ${CLI_TUTORIAL.length}`;
+  document.getElementById("cli-tutorial-icon").textContent = step.icon;
+  document.getElementById("cli-tutorial-eyebrow").textContent = step.eyebrow;
+  document.getElementById("cli-tutorial-title").textContent = step.title;
+  document.getElementById("cli-tutorial-body").textContent = step.body;
+  document.getElementById("cli-tutorial-example").textContent = step.example;
+  document.getElementById("cli-tutorial-hint").textContent = step.hint;
+  tutorial.querySelectorAll(".cli-tutorial-dots i").forEach((dot, index) => {
+    dot.classList.toggle("active", index === state.cliTutorial.step);
+  });
+  document.getElementById("cli-tutorial-back").hidden = state.cliTutorial.step === 0;
+  document.getElementById("cli-tutorial-next").textContent =
+    state.cliTutorial.step === CLI_TUTORIAL.length - 1 ? "Start CLI" : "Next";
+}
+
+function renderCli() {
+  if (!state.cliLog.length) {
+    state.cliLog.push({
+      command: "squid status",
+      kind: "system",
+      output: JSON.stringify(cliSessionPayload(), null, 2)
+    });
+  }
+  const entries = state.cliLog
+    .map(
+      (entry) => `
+        <div class="cli-entry ${entry.kind || ""}">
+          <div class="cli-entry-command"><span>squid@core</span>${escapeHtml(entry.command)}</div>
+          <pre>${escapeHtml(entry.output)}</pre>
+        </div>`
+    )
+    .join("");
+  const commands = CLI_COMMANDS.map(
+    (item) =>
+      `<button type="button" data-cli="${escapeHtml(item.command)}"><span>${escapeHtml(item.label)}</span><code>${escapeHtml(item.command)}</code></button>`
+  ).join("");
+  content.innerHTML = `
+    <header class="cli-topbar">
+      <a class="cli-brand" href="#/home">
+        <img src="/brand/favicon.png" alt="" />
+        Squid
+        <span class="cli-badge">CORE</span>
+      </a>
+      <div class="cli-top-actions">
+        <div class="cli-connection connected"><i></i> Connected</div>
+        <button class="cli-button" id="cli-theme" type="button">Theme</button>
+        <a class="cli-button" href="#/home">Console</a>
+        <a class="cli-button" href="${FULL}" target="_blank" rel="noreferrer">Open Squid Pay</a>
       </div>
-    </section>
-  `
-  );
+    </header>
+    <div class="cli-layout">
+      <aside class="cli-sidebar">
+        <div>
+          <p class="eyebrow">Native Squid</p>
+          <h1>Platform CLI</h1>
+          <p>Read your workspace and create proposals for review. Commands run through Squid.</p>
+        </div>
+        <div class="cli-safety">
+          <strong>Human control stays on</strong>
+          <p>The CLI cannot approve holds, sign transactions, or move money on Core.</p>
+        </div>
+        <div class="cli-command-list">${commands}</div>
+        <div class="cli-native-note">
+          <span>Native install</span>
+          <code>npm i -g @squid-pay/cli</code>
+          <p>Production keys stay on the <strong>full platform</strong>.</p>
+        </div>
+      </aside>
+      <section class="cli-console">
+        <div class="cli-console-head">
+          <div>
+            <i class="terminal-dot red"></i>
+            <i class="terminal-dot yellow"></i>
+            <i class="terminal-dot green"></i>
+            <strong>squid@platform</strong>
+          </div>
+          <div>
+            <button class="cli-text-button" id="cli-clear" type="button">Clear</button>
+            <button class="cli-text-button" id="cli-guide" type="button">Guide</button>
+          </div>
+        </div>
+        <div class="cli-output" id="cli-output">${entries}</div>
+        <form class="cli-prompt" id="cli-form">
+          <label>squid<span>$</span></label>
+          <input name="command" placeholder="squid status" autocomplete="off" />
+          <button type="submit">Run</button>
+        </form>
+      </section>
+    </div>
+    <div class="cli-tutorial" id="cli-tutorial" ${state.cliTutorial.open ? "" : "hidden"}>
+      <div class="cli-tutorial-backdrop" id="cli-tutorial-backdrop"></div>
+      <div class="cli-tutorial-card">
+        <div class="cli-tutorial-head">
+          <span id="cli-tutorial-step"></span>
+          <button type="button" id="cli-tutorial-close" aria-label="Close">×</button>
+        </div>
+        <div class="cli-tutorial-icon" id="cli-tutorial-icon"></div>
+        <p class="eyebrow" id="cli-tutorial-eyebrow"></p>
+        <h2 id="cli-tutorial-title"></h2>
+        <p id="cli-tutorial-body"></p>
+        <div class="cli-tutorial-example">
+          <code id="cli-tutorial-example"></code>
+          <span id="cli-tutorial-hint"></span>
+        </div>
+        <div class="cli-tutorial-dots">${CLI_TUTORIAL.map(() => "<i></i>").join("")}</div>
+        <div class="cli-tutorial-actions">
+          <button type="button" id="cli-tutorial-skip">Skip</button>
+          <div>
+            <button type="button" id="cli-tutorial-back">Back</button>
+            <button class="primary" type="button" id="cli-tutorial-next">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  renderCliTutorial();
+  const output = document.getElementById("cli-output");
+  output.scrollTop = output.scrollHeight;
+  document.getElementById("cli-theme").onclick = cycleTheme;
+  document.getElementById("cli-clear").onclick = () => {
+    state.cliLog = [];
+    renderCli();
+  };
+  document.getElementById("cli-guide").onclick = () => {
+    state.cliTutorial.open = true;
+    renderCliTutorial();
+  };
+  document.getElementById("cli-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = event.target.elements.command;
+    runCliCommand(input.value);
+  });
+  content.querySelectorAll("[data-cli]").forEach((button) => {
+    button.onclick = () => runCliCommand(button.dataset.cli);
+  });
+  const closeTutorial = () => {
+    state.cliTutorial.open = false;
+    renderCliTutorial();
+  };
+  document.getElementById("cli-tutorial-close").onclick = closeTutorial;
+  document.getElementById("cli-tutorial-backdrop").onclick = closeTutorial;
+  document.getElementById("cli-tutorial-skip").onclick = closeTutorial;
+  document.getElementById("cli-tutorial-back").onclick = () => {
+    state.cliTutorial.step = Math.max(0, state.cliTutorial.step - 1);
+    renderCliTutorial();
+  };
+  document.getElementById("cli-tutorial-next").onclick = () => {
+    if (state.cliTutorial.step >= CLI_TUTORIAL.length - 1) {
+      closeTutorial();
+      return;
+    }
+    state.cliTutorial.step += 1;
+    renderCliTutorial();
+  };
 }
 
 function renderSettings() {
@@ -513,6 +737,7 @@ backdrop.addEventListener("click", closeMenu);
 modalBackdrop.addEventListener("click", closeModal);
 window.addEventListener("hashchange", () => renderRoute(currentRoute()));
 
+applyTheme();
 refreshSession()
   .catch(() => {})
   .finally(() => renderRoute(currentRoute()));
