@@ -3,12 +3,7 @@ const WALLET_CATALOG = coreWallets.WALLET_META;
 const detectInstalledWallets = coreWallets.detectWallets;
 const connectBrowserWallet = coreWallets.connectWallet;
 const api = coreWallets.api;
-
-const CORE_ROUTES = {
-  home: { title: "Home", eyebrow: "Squid Pay Core" },
-  wallet: { title: "Wallet", eyebrow: "Core" },
-  ai: { title: "Squid AI", eyebrow: "Core" }
-};
+const FULL = "https://squidpay.dev";
 
 const state = {
   session: { connected: false },
@@ -17,7 +12,7 @@ const state = {
     {
       role: "assistant",
       content:
-        "I am Squid AI on Core. Connect MetaMask, Coinbase Wallet, Phantom, or Backpack, then ask about that session. Everything else lives on squidpay.dev."
+        "I am Squid AI. This Core console only lets me talk. Money, agents, review, CLI, and the rest stay on squidpay.dev."
     }
   ]
 };
@@ -25,11 +20,28 @@ const state = {
 const content = document.getElementById("content");
 const sidebar = document.getElementById("sidebar");
 const backdrop = document.getElementById("drawer-backdrop");
+const appShell = document.getElementById("app-shell");
+const connectGate = document.getElementById("connect-gate");
+const modal = document.getElementById("modal");
+const modalBackdrop = document.getElementById("modal-backdrop");
 
 function shortAddress(address) {
   if (!address) return "";
   return address.length <= 12 ? address : `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
+
+function shortWallet(address) {
+  if (!address) return "—";
+  return address.length <= 10 ? address : `${address.slice(0, 4)}…${address.slice(-4)}`;
+}
+
+const ICO = {
+  plus: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3.2v9.6M3.2 8h9.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  send: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.1 8h9.8M9.4 4.7 13 8l-3.6 3.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  spark: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.2c.16 2.3 1.18 3.32 3.48 3.48C8.18 5.84 7.16 6.86 7 9.16 6.84 6.86 5.82 5.84 3.52 5.68 5.82 5.52 6.84 4.5 7 2.2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+  refresh: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.1 8A5.1 5.1 0 1 1 11.6 4.5M13.2 2.8v3.2h-3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  copy: '<svg class="btn-ico" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5.4" y="5.4" width="7.2" height="7.2" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M3.6 10.2V4.8A1.2 1.2 0 0 1 4.8 3.6h5.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+};
 
 function escapeHtml(value) {
   return String(value)
@@ -39,15 +51,44 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function isPreview() {
+  return new URLSearchParams(location.search).get("preview") === "1";
+}
+
+function isConnected() {
+  if (isPreview() && !state.session.connected) {
+    state.session = {
+      connected: true,
+      provider: "email",
+      address: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+      chain: "solana"
+    };
+  }
+  return Boolean(state.session?.connected && state.session.address);
+}
+
+function setShell(connected) {
+  document.body.classList.toggle("on-gate", !connected);
+  document.body.classList.toggle("chat-page", connected && (state.route === "chat" || state.route === "ai"));
+  appShell.hidden = !connected;
+  connectGate.hidden = connected;
+}
+
+const PROVIDER_LABELS = {
+  metamask: "MetaMask",
+  coinbase: "Coinbase Wallet",
+  phantom: "Phantom",
+  backpack: "Backpack",
+  email: "email"
+};
+
 function setChrome() {
-  const meta = CORE_ROUTES[state.route] || { title: "Full platform", eyebrow: "Core variant" };
-  document.getElementById("top-title").textContent = meta.title;
-  document.getElementById("top-eyebrow").textContent = meta.eyebrow;
-  document.getElementById("wallet-chip").textContent = state.session.connected
-    ? `${state.session.provider} · ${shortAddress(state.session.address)}`
-    : "Connect wallet";
+  if (!isConnected()) return;
+  const provider = PROVIDER_LABELS[state.session.provider] || "wallet";
+  document.getElementById("wallet-chip").textContent = `Signed in with ${provider}.`;
   document.querySelectorAll(".nav-item").forEach((item) => {
-    item.classList.toggle("active", item.dataset.route === state.route);
+    const route = item.dataset.route;
+    item.classList.toggle("active", route === state.route || (state.route === "ai" && route === "chat"));
   });
 }
 
@@ -61,63 +102,36 @@ function openMenu() {
   backdrop.hidden = false;
 }
 
-async function refreshSession() {
-  state.session = await api("/api/session");
-  setChrome();
+function closeModal() {
+  modal.hidden = true;
+  modalBackdrop.hidden = true;
+  modal.innerHTML = "";
 }
 
-function renderHome() {
-  const session = state.session;
-  content.innerHTML = `
-    <section class="hero">
-      <div>
-        <h2>Dive into the future of the <em>economy.</em></h2>
-        <p class="lede">Every AI agent needs a bank. This Core variant keeps the simple path: connect a wallet and talk to Squid AI. The rest of the Squid Pay console is on the full platform.</p>
-        <div class="actions">
-          <a class="btn" href="#/wallet">${session.connected ? "Open wallet" : "Connect wallet"} →</a>
-          <a class="ghost" href="#/ai">Talk to Squid AI</a>
-        </div>
-      </div>
-      <div class="card-visual">
-        <div class="row">
-          <span>${session.connected ? escapeHtml(session.provider) : "squid"}</span>
-          <span>${session.connected ? escapeHtml(shortAddress(session.address)) : "Core session"}</span>
-        </div>
-        <div>
-          <div class="amt">${session.connected ? "Connected" : "Open core"}</div>
-          <div class="chip">${session.connected ? session.chain : "MetaMask · Coinbase · Phantom · Backpack"}</div>
-        </div>
-      </div>
-    </section>
-    <section class="grid">
-      <article class="panel">
-        <p class="kicker">included</p>
-        <h3>Wallet connect</h3>
-        <p>Prove you own MetaMask, Coinbase Wallet, Phantom, or Backpack. Core never holds a seed phrase.</p>
-      </article>
-      <article class="panel">
-        <p class="kicker">included</p>
-        <h3>Squid AI</h3>
-        <p>Ask about your session, Core limits, and where the full product lives.</p>
-      </article>
-      <article class="panel">
-        <p class="kicker">squidpay.dev</p>
-        <h3>Everything else</h3>
-        <p>Payments, cards, trading, agents, holds, links, policies, catalog, and developer keys stay on the main platform.</p>
-      </article>
-    </section>
+function openCoreModal(title, copy) {
+  modal.hidden = false;
+  modalBackdrop.hidden = false;
+  modal.innerHTML = `
+    <div class="banner">Core variant</div>
+    <h2>${escapeHtml(title)}</h2>
+    <p class="muted">${escapeHtml(copy)}</p>
+    <p>This is a Squid Pay Core variant. Only Squid AI / Chat works here. Open the full console for this action.</p>
+    <div class="modal-actions">
+      <button class="pill" id="modal-cancel" type="button">Cancel</button>
+      <a class="btn-blue" href="${FULL}" target="_blank" rel="noreferrer">Open Squid Pay</a>
+    </div>
   `;
+  document.getElementById("modal-cancel").onclick = closeModal;
 }
 
-function renderWallet() {
+function walletCardsHtml() {
   const detected = detectInstalledWallets();
-  const cards = Object.values(WALLET_CATALOG)
+  return Object.values(WALLET_CATALOG)
     .map((wallet) => {
       const live = detected[wallet.id];
-      const active = state.session.connected && state.session.provider === wallet.id;
       const status = live.installed ? "Detected in this browser" : "Install to connect";
       return `
-        <button class="wallet-card ${live.installed ? "ready" : ""} ${active ? "active" : ""}" data-wallet="${wallet.id}" type="button">
+        <button class="wallet-card ${live.installed ? "ready" : ""}" data-wallet="${wallet.id}" type="button">
           <span class="wallet-mark" style="background:${wallet.color}">${wallet.mark}</span>
           <span>
             <h3>${wallet.name}</h3>
@@ -127,73 +141,171 @@ function renderWallet() {
       `;
     })
     .join("");
-
-  const session = state.session.connected
-    ? `
-      <div class="session-box">
-        <div>
-          <div class="chip ok">Connected</div>
-          <h3 style="margin:8px 0 6px">${escapeHtml(state.session.provider)}</h3>
-          <div class="mono">${escapeHtml(state.session.address)}</div>
-          <p class="muted" style="color:#9ca3af">Chain ${escapeHtml(state.session.chain)}</p>
-        </div>
-        <button class="ghost" id="disconnect-btn" type="button">Disconnect</button>
-      </div>
-    `
-    : `<p class="muted">Choose a wallet. Core asks it to sign a session message. No funds move.</p>`;
-
-  content.innerHTML = `
-    <section class="panel" style="margin-bottom:14px">
-      <p class="kicker">session</p>
-      <h3>Owner wallet stays the signer</h3>
-      ${session}
-    </section>
-    <div class="wallet-grid">${cards}</div>
-    <p class="error" id="wallet-error" hidden></p>
-  `;
-
-  content.querySelectorAll("[data-wallet]").forEach((button) => {
-    button.addEventListener("click", () => handleConnect(button.dataset.wallet));
-  });
-  document.getElementById("disconnect-btn")?.addEventListener("click", handleDisconnect);
 }
 
-async function handleConnect(id) {
+function renderConnectGate() {
+  setShell(false);
+  closeMenu();
+  closeModal();
+  const list = document.getElementById("gate-wallets");
+  list.innerHTML = walletCardsHtml();
   const errorEl = document.getElementById("wallet-error");
   errorEl.hidden = true;
+  errorEl.textContent = "";
+  list.querySelectorAll("[data-wallet]").forEach((button) => {
+    button.addEventListener("click", () => handleConnect(button.dataset.wallet));
+  });
+}
+
+async function refreshSession() {
+  state.session = await api("/api/session");
+}
+
+function renderHome() {
+  const address = state.session.address || "";
+  content.innerHTML = `
+    <div class="actions">
+      <button class="btn-blue" data-core="Deposit" type="button">${ICO.plus} Deposit <span class="key">D</span></button>
+      <button class="pill" data-core="Send" type="button">${ICO.send} Send <span class="key">S</span></button>
+      <button class="pill" id="home-agents" type="button">${ICO.spark} Agents <span class="key">A</span></button>
+    </div>
+    <section class="home-panel">
+      <h2>Squid Wallet</h2>
+      <p class="muted home-sub">Your embedded Squid wallet is created automatically with email login.</p>
+      <div class="wallet-tiles">
+        <article class="wallet-tile">
+          <div class="label">Balance</div>
+          <div class="tile-value">$0.00</div>
+        </article>
+        <article class="wallet-tile">
+          <div class="label">Wallet address</div>
+          <div class="tile-value">${escapeHtml(shortWallet(address))}</div>
+        </article>
+        <article class="wallet-tile">
+          <div class="label">USDC</div>
+          <div class="tile-value">0 USDC</div>
+        </article>
+        <article class="wallet-tile">
+          <div class="label">SOL</div>
+          <div class="tile-value">0 SOL</div>
+        </article>
+      </div>
+      <div class="actions home-wallet-actions">
+        <button class="btn-blue" data-core="Deposit" type="button">${ICO.plus} Deposit</button>
+        <button class="pill" data-core="Refresh" type="button">${ICO.refresh} Refresh</button>
+        <button class="pill" id="copy-address" type="button">${ICO.copy} Copy address</button>
+      </div>
+      <p class="muted home-note">Funds sent to this Solana address appear after a refresh. Squid never holds your private key.</p>
+    </section>
+    <section class="home-panel">
+      <h2>Wallets</h2>
+      <p class="muted home-sub">Balances across your Squid wallet and connected wallets.</p>
+      <div class="linked-wallet">
+        <span class="sol-mark" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3.2 4.15h8.3L10 5.85H1.7L3.2 4.15Zm0 5.99h8.3L10 11.84H1.7L3.2 10.14Zm9.6-3.08H4.5L6 5.36h8.3L12.8 7.06Z" fill="currentColor"/></svg>
+        </span>
+        <div class="linked-copy">
+          <div class="linked-name">Solana</div>
+          <div class="mono">${escapeHtml(address)} · Squid</div>
+        </div>
+        <div class="linked-right">
+          <div>$0.00</div>
+          <div class="muted">Connected</div>
+        </div>
+      </div>
+    </section>
+  `;
+  content.querySelectorAll("[data-core]").forEach((button) => {
+    button.onclick = () =>
+      openCoreModal(button.dataset.core, `${button.dataset.core} is full-platform. Core only talks through Squid AI.`);
+  });
+  document.getElementById("home-agents").onclick = openCreateAgent;
+  document.getElementById("copy-address").onclick = async (event) => {
+    const button = event.currentTarget;
+    const original = button.innerHTML;
+    const copied = await copyText(address);
+    if (!copied) {
+      openCoreModal("Copy address", "Copy the address on the full platform if this browser blocks the clipboard.");
+      return;
+    }
+    button.textContent = "Copied";
+    setTimeout(() => {
+      button.innerHTML = original;
+    }, 1400);
+  };
+}
+
+async function copyText(value) {
   try {
-    state.session = await connectBrowserWallet(id);
-    renderWallet();
-    setChrome();
-  } catch (error) {
-    errorEl.hidden = false;
-    errorEl.innerHTML = error.install
-      ? `${escapeHtml(error.message)} <a class="text-link" href="${error.install}" target="_blank" rel="noreferrer">Install →</a>`
-      : escapeHtml(error.message);
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    const field = document.createElement("textarea");
+    field.value = value;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.left = "-9999px";
+    document.body.appendChild(field);
+    field.select();
+    const ok = document.execCommand("copy");
+    field.remove();
+    return ok;
   }
 }
 
-async function handleDisconnect() {
-  state.session = await api("/api/session/disconnect", { method: "POST", body: {} });
-  renderWallet();
-  setChrome();
+function openCreateAgent() {
+  modal.hidden = false;
+  modalBackdrop.hidden = false;
+  modal.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2>Create agent</h2>
+      <button class="icon-btn" id="modal-x" type="button">×</button>
+    </div>
+    <p class="muted">Name your agent, set an optional spending limit, then pick the framework to connect.</p>
+    <div class="field">
+      <label>Agent name</label>
+      <input placeholder="e.g. Ops agent" disabled />
+    </div>
+    <div class="field">
+      <label>Spending limit per payment (USD)</label>
+      <input placeholder="No limit" disabled />
+    </div>
+    <div class="field">
+      <label>Framework</label>
+      <select disabled><option>Custom</option></select>
+    </div>
+    <div class="field">
+      <label>Linked wallet</label>
+      <select disabled><option>Proposal-only — link later</option></select>
+    </div>
+    <p class="muted">This is a public wallet association only. The agent cannot access private keys or sign.</p>
+    <div class="banner">Core variant</div>
+    <p>Creating agents is not included in Core. Only Squid AI / Chat works here.</p>
+    <div class="modal-actions">
+      <button class="pill" id="modal-cancel" type="button">Cancel</button>
+      <a class="btn-blue" href="${FULL}" target="_blank" rel="noreferrer">Create agent</a>
+    </div>
+  `;
+  document.getElementById("modal-cancel").onclick = closeModal;
+  document.getElementById("modal-x").onclick = closeModal;
 }
 
-function renderAi() {
+function renderChat() {
   const bubbles = state.chat
     .map((msg) => `<div class="bubble ${msg.role}">${escapeHtml(msg.content)}</div>`)
     .join("");
   content.innerHTML = `
-    <div class="prompts">
-      <button class="prompt" data-prompt="What can Core do?" type="button">What can Core do?</button>
-      <button class="prompt" data-prompt="How do I connect Phantom or MetaMask?" type="button">Connect a wallet</button>
-      <button class="prompt" data-prompt="I need to send a payment and issue an agent card." type="button">Payments and cards</button>
-    </div>
     <section class="chat">
+      <div class="chat-head">Squid AI · talk only on Core</div>
+      <div class="prompts">
+        <button class="prompt" data-prompt="What can Core do?" type="button">What can Core do?</button>
+        <button class="prompt" data-prompt="Which wallet is connected?" type="button">Which wallet is connected?</button>
+        <button class="prompt" data-prompt="Create an agent and send a payment." type="button">Agents and payments</button>
+      </div>
       <div class="thread" id="thread">${bubbles}</div>
       <form class="composer" id="chat-form">
-        <input name="message" placeholder="Ask Squid AI…" autocomplete="off" />
-        <button class="btn" type="submit">Send</button>
+        <input name="message" placeholder="Talk to Squid AI…" autocomplete="off" />
+        <button class="btn-blue" type="submit">Send</button>
       </form>
     </section>
   `;
@@ -216,7 +328,7 @@ async function onChatSubmit(event) {
 
 async function sendChat(text) {
   state.chat.push({ role: "user", content: text });
-  renderAi();
+  renderChat();
   try {
     const result = await api("/api/ai/chat", {
       method: "POST",
@@ -226,35 +338,165 @@ async function sendChat(text) {
   } catch (error) {
     state.chat.push({ role: "assistant", content: error.message });
   }
-  renderAi();
+  renderChat();
 }
 
-function renderGate(payload) {
+function corePage(title, extraHtml) {
   content.innerHTML = `
-    <section class="gate">
-      <div class="banner">Core variant</div>
-      <h2>${escapeHtml(payload.title)}</h2>
-      <p class="kicker">${escapeHtml(payload.api)}</p>
-      <p class="lede">${escapeHtml(payload.summary)}</p>
-      <p>${escapeHtml(payload.message)}</p>
-      <div class="actions">
-        <a class="btn-blue" href="${payload.cta.url}" target="_blank" rel="noreferrer">${escapeHtml(payload.cta.label)} →</a>
-        <a class="ghost" href="#/ai">Ask Squid AI</a>
-      </div>
-    </section>
+    <div class="banner">Core variant</div>
+    <h2 style="margin:0 0 8px;letter-spacing:-0.03em">${escapeHtml(title)}</h2>
+    <p class="muted">This is a Squid Pay Core variant. Only Squid AI / Chat works here. ${escapeHtml(title)} lives on the full console.</p>
+    <div class="actions">
+      <a class="btn-blue" href="${FULL}" target="_blank" rel="noreferrer">Open Squid Pay</a>
+      <a class="pill" href="#/chat">Talk to Squid AI</a>
+    </div>
+    ${extraHtml || ""}
   `;
 }
 
-async function renderRoute(route) {
-  state.route = route;
+function renderMoney() {
+  corePage(
+    "Money",
+    `
+    <section class="stats">
+      <article class="card"><div class="label">Available</div><div class="metric">$0.00</div></article>
+      <article class="card"><div class="label">Daily money</div><p class="muted">Pay people or services</p></article>
+      <article class="card"><div class="label">Verified payments</div><div class="metric">0</div></article>
+    </section>
+  `
+  );
+}
+
+function renderHolds() {
+  corePage(
+    "Needs Review",
+    `<section class="card activity-empty"><div><h3>No holds</h3><p class="muted">Review queues run on squidpay.dev.</p></div></section>`
+  );
+}
+
+function renderAgents() {
+  corePage(
+    "Agents",
+    `<section class="card activity-empty"><div><h3>No agents</h3><p class="muted">Create agents on the full platform.</p></div></section>`
+  );
+}
+
+function renderActivity() {
+  const cells = Array.from({ length: 7 * 24 }, (_, i) => `<span class="heat-cell${i === 110 || i === 163 ? " on" : ""}"></span>`).join("");
+  corePage(
+    "Activity",
+    `
+    <h3>Trade intensity</h3>
+    <p class="muted">When and where the most activity happens</p>
+    <section class="stats">
+      <article class="card"><div class="label">Busiest when</div><div class="metric" style="font-size:20px">—</div></article>
+      <article class="card"><div class="label">Busiest where</div><div class="metric" style="font-size:20px">Chat</div></article>
+      <article class="card"><div class="label">Logged events</div><div class="metric">0</div></article>
+    </section>
+    <section class="card heat">
+      <div class="muted">When</div>
+      <div class="heat-grid">${cells}</div>
+      <div class="bars">
+        <div class="bar"><span>Trading</span><i></i><span>0</span></div>
+        <div class="bar"><span>Payments</span><i></i><span>0</span></div>
+        <div class="bar"><span>Agents</span><i><em style="width:0"></em></i><span>0</span></div>
+      </div>
+    </section>
+    <section class="card" style="margin-top:12px">
+      <h3>Activity log</h3>
+      <table class="table">
+        <thead><tr><th>Area</th><th>Time</th><th>From</th><th>Action</th><th>Outcome</th><th>Why</th></tr></thead>
+        <tbody><tr><td colspan="6" class="muted">Nothing here yet.</td></tr></tbody>
+      </table>
+    </section>
+  `
+  );
+}
+
+function renderCli() {
+  const session = {
+    authenticated: true,
+    variant: "core",
+    access: "Owner session",
+    wallet: {
+      provider: state.session.provider,
+      address: state.session.address
+    },
+    safety: "Read and talk only. Wallet signing and money stay on squidpay.dev."
+  };
+  corePage(
+    "Squid CLI",
+    `
+    <section class="cli">
+      <aside class="cli-side">
+        <div class="kicker">Native Squid</div>
+        <h3>Platform CLI</h3>
+        <p class="muted">Read your workspace and create proposals for review. Commands run through Squid.</p>
+        <p class="muted">Human control stays on. The CLI cannot approve holds, sign transactions, or move money on Core.</p>
+      </aside>
+      <div class="cli-main">
+        <div class="cli-cmd">squid@platform · squid status</div>
+        <pre>${escapeHtml(JSON.stringify(session, null, 2))}</pre>
+      </div>
+    </section>
+  `
+  );
+}
+
+function renderSettings() {
+  corePage("Settings", `<section class="card"><p class="muted">Workspace, keys, and safety controls are on the full platform.</p></section>`);
+}
+
+function renderHelp() {
+  corePage("Help", `<section class="card"><p class="muted">Docs for the full console are at squidpay.dev.</p></section>`);
+}
+
+async function handleConnect(id) {
+  const errorEl = document.getElementById("wallet-error");
+  errorEl.hidden = true;
+  try {
+    state.session = await connectBrowserWallet(id);
+    if (location.hash !== "#/home") location.hash = "#/home";
+    else await showPlatform("home");
+  } catch (error) {
+    errorEl.hidden = false;
+    errorEl.innerHTML = error.install
+      ? `${escapeHtml(error.message)} <a href="${error.install}" target="_blank" rel="noreferrer">Install →</a>`
+      : escapeHtml(error.message);
+  }
+}
+
+async function handleDisconnect() {
+  state.session = await api("/api/session/disconnect", { method: "POST", body: {} });
+  if (location.hash !== "#/connect") location.hash = "#/connect";
+  renderConnectGate();
+}
+
+async function showPlatform(route) {
+  const next = route === "wallet" || route === "connect" ? "home" : route || "home";
+  state.route = next === "ai" ? "chat" : next;
+  setShell(true);
   setChrome();
   closeMenu();
-  if (route === "home") return renderHome();
-  if (route === "wallet") return renderWallet();
-  if (route === "ai") return renderAi();
-  const payload = await api(`/api/platform/${encodeURIComponent(route)}`);
-  document.getElementById("top-title").textContent = payload.title || "Full platform";
-  renderGate(payload);
+  if (state.route === "home") return renderHome();
+  if (state.route === "chat") return renderChat();
+  if (state.route === "money") return renderMoney();
+  if (state.route === "holds") return renderHolds();
+  if (state.route === "agents") return renderAgents();
+  if (state.route === "activity") return renderActivity();
+  if (state.route === "cli") return renderCli();
+  if (state.route === "settings") return renderSettings();
+  if (state.route === "help") return renderHelp();
+  const payload = await api(`/api/platform/${encodeURIComponent(state.route)}`);
+  corePage(payload.title || "Full platform");
+}
+
+async function renderRoute(route) {
+  if (!isConnected()) {
+    renderConnectGate();
+    return;
+  }
+  await showPlatform(route);
 }
 
 function currentRoute() {
@@ -262,11 +504,13 @@ function currentRoute() {
   return raw || "home";
 }
 
-document.getElementById("wallet-chip").addEventListener("click", () => {
-  location.hash = "#/wallet";
-});
+document.getElementById("disconnect-btn").addEventListener("click", handleDisconnect);
 document.getElementById("menu-btn").addEventListener("click", openMenu);
+document.getElementById("choose-agent").addEventListener("click", () => {
+  openCoreModal("Choose agent", "Agent switching is full-platform. Core only talks through Squid AI.");
+});
 backdrop.addEventListener("click", closeMenu);
+modalBackdrop.addEventListener("click", closeModal);
 window.addEventListener("hashchange", () => renderRoute(currentRoute()));
 
 refreshSession()
