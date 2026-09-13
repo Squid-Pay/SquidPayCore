@@ -80,6 +80,7 @@ describe("wallet connect gate", () => {
     assert.match(css, /\.cli-topbar\s*\{/);
     assert.match(css, /\.cli-console\s*\{/);
     assert.match(css, /\.cli-tutorial\s*\{/);
+    assert.match(css, /\.heat-grid\s*\{[^}]*11px/);
     assert.match(app, /class="cli-layout"/);
     assert.match(app, /Platform CLI/);
     assert.match(app, /squid status/);
@@ -90,6 +91,32 @@ describe("wallet connect gate", () => {
     assert.match(app, /renderConnectGate\(\)/);
     assert.match(app, /Only Squid AI \/ Chat works here/);
     assert.match(app, /Talk to Squid AI/);
+  });
+
+  it("renders the product Squid AI empty state with example actions", () => {
+    assert.match(app, /chat-message chat-welcome/);
+    assert.match(app, /Example actions/);
+    assert.match(app, /What can ops do\?/);
+    assert.match(app, /Portfolio scan/);
+    assert.match(app, /Prepare a payment, trade, automation, or token/);
+    assert.match(app, /class="chat-attach"/);
+    assert.match(app, /class="primary chat-send"/);
+    assert.doesNotMatch(app, /Talk only on Core/);
+    assert.doesNotMatch(app, /horatiucode/);
+  });
+
+  it("puts Trade intensity above the existing Activity log", () => {
+    assert.match(app, /Trade intensity/);
+    assert.match(app, /Day of week × hour/);
+    assert.match(app, /Which console area has the most activity/);
+    assert.match(app, /heat-grid/);
+    assert.match(app, /where-list/);
+    assert.match(app, /Activity log/);
+    assert.match(app, /Show/);
+    const intensityAt = app.indexOf("<h2>Trade intensity</h2>");
+    const coreAt = app.indexOf("Only Squid AI / Chat works here. Activity lives");
+    const logAt = app.indexOf("<h3>Activity log</h3>");
+    assert.ok(intensityAt > 0 && intensityAt < coreAt && coreAt < logAt);
   });
 
   it("fills Settings from the signed-in session instead of a sample profile", () => {

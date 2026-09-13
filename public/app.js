@@ -10,13 +10,8 @@ const state = {
   route: "home",
   cliLog: [],
   cliTutorial: { open: true, step: 0 },
-  chat: [
-    {
-      role: "assistant",
-      content:
-        "I am Squid AI. This Core console only lets me talk. Money, agents, review, CLI, and the rest stay on squidpay.dev."
-    }
-  ]
+  chat: [],
+  activity: []
 };
 
 const content = document.getElementById("content");
@@ -106,7 +101,9 @@ const PROVIDER_LABELS = {
 function setChrome() {
   if (!isConnected()) return;
   const provider = PROVIDER_LABELS[state.session.provider] || "wallet";
-  document.getElementById("wallet-chip").textContent = `Signed in with ${provider}.`;
+  const onChat = state.route === "chat" || state.route === "ai";
+  document.getElementById("top-balance").textContent = onChat ? "ops" : "$0.00";
+  document.getElementById("wallet-chip").textContent = onChat ? "0 USDC" : `Signed in with ${provider}.`;
   document.querySelectorAll(".nav-button").forEach((item) => {
     const route = item.dataset.route;
     item.classList.toggle("active", route === state.route || (state.route === "ai" && route === "chat"));
@@ -270,40 +267,106 @@ function openCreateAgent() {
   document.getElementById("modal-x").onclick = closeModal;
 }
 
+const CHAT_EXAMPLES = [
+  { title: "Portfolio scan", detail: "See all your balances at a glance.", prompt: "Scan my portfolio and summarize all balances." },
+  { title: "Swap", detail: "Swap via Jupiter (Solana) or 0x (EVM).", prompt: "Prepare a swap via Jupiter or 0x." },
+  { title: "Open perp position", detail: "Trade perpetual futures.", prompt: "Prepare an open perp position draft." },
+  { title: "Add to OpenClaw", detail: "Use your agent in other clients.", prompt: "Add this ops agent to OpenClaw." },
+  { title: "Create automation", detail: "Draft a daily cron in Automations.", prompt: "Draft a daily automation." },
+  { title: "Create token", detail: "Deploy an ERC-20 on Base.", prompt: "Prepare an ERC-20 token draft on Base." }
+];
+
+function chatWelcomeText() {
+  const profile = profileFromSession();
+  const hi = profile.name ? `Hi ${profile.name}` : "Hi";
+  return `${hi} — I'm Squid, your single Chat assistant while ops is active. AI actions are off, but you can still prepare a payment, trade, automation, or token draft here. You can also drag and drop images here.`;
+}
+
 function renderChat() {
+  const hasUser = state.chat.some((msg) => msg.role === "user");
   const bubbles = state.chat
     .map(
       (msg) =>
-        `<div class="chat-message ${msg.role}"><strong>${msg.role === "user" ? "You" : "Squid AI"}</strong><p>${escapeHtml(msg.content)}</p></div>`
+        `<div class="chat-message ${msg.role}"><strong>${msg.role === "user" ? "You" : "Squid"}</strong><p>${escapeHtml(msg.content)}</p></div>`
     )
     .join("");
-  content.innerHTML = `
-    <section class="chat-panel">
+  const welcome = hasUser
+    ? ""
+    : `
+      <div class="chat-message chat-welcome" id="chat-welcome">
+        <strong>Squid</strong>
+        <p id="chat-welcome-text">${escapeHtml(chatWelcomeText())}</p>
+      </div>
+    `;
+  const examples = hasUser
+    ? ""
+    : `
       <div class="chat-examples">
         <div class="chat-examples-head">
-          <p class="eyebrow">Squid AI</p>
-          <h3>Talk only on Core</h3>
-          <p>Money, agents, review, and CLI stay on the full platform.</p>
+          <p class="eyebrow">Example actions</p>
+          <h3>What can ops do?</h3>
+          <p>Pick an action, tweak the prompt if needed, then hit send.</p>
         </div>
         <div class="chat-examples-grid">
-          <button class="chat-example-card" data-prompt="What can Core do?" type="button"><strong>What can Core do?</strong><span>Live talk. Everything else is gated.</span></button>
-          <button class="chat-example-card" data-prompt="Which wallet is connected?" type="button"><strong>Which wallet is connected?</strong><span>Read the Core session.</span></button>
-          <button class="chat-example-card" data-prompt="Create an agent and send a payment." type="button"><strong>Agents and payments</strong><span>Those live on squidpay.dev.</span></button>
+          ${CHAT_EXAMPLES.map(
+            (item) =>
+              `<button class="chat-example-card" data-prompt="${escapeHtml(item.prompt)}" type="button"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.detail)}</span></button>`
+          ).join("")}
         </div>
+        <ol class="chat-examples-steps">
+          <li><span>1</span> Choose an action</li>
+          <li><span>2</span> Review the prompt</li>
+          <li><span>3</span> Press send</li>
+        </ol>
       </div>
-      <div class="chat-thread" id="thread">${bubbles}</div>
+    `;
+  content.innerHTML = `
+    <section class="chat-panel" id="chat-panel">
+      <div class="chat-dropzone" id="chat-dropzone">
+        <strong>Drop an image</strong>
+        <span>Image drafts stay on the full platform.</span>
+      </div>
+      <div class="chat-thread" id="thread">${welcome}${examples}${bubbles}</div>
       <form class="chat-composer" id="chat-form">
-        <input name="message" placeholder="Talk to Squid AI…" autocomplete="off" />
-        <button class="primary chat-send" type="submit">Send</button>
+        <button class="chat-attach" id="chat-attach" type="button" aria-label="Attach">+</button>
+        <input name="message" id="chat-input" placeholder="Prepare a payment, trade, automation, or token" autocomplete="off" />
+        <button class="primary chat-send" type="submit" aria-label="Send">
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.2 8h9.4M9.2 4.6 12.8 8 9.2 11.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </form>
     </section>
   `;
   const thread = document.getElementById("thread");
   thread.scrollTop = thread.scrollHeight;
+  const input = document.getElementById("chat-input");
   document.getElementById("chat-form").addEventListener("submit", onChatSubmit);
-  content.querySelectorAll("[data-prompt]").forEach((button) => {
-    button.addEventListener("click", () => sendChat(button.dataset.prompt));
+  document.getElementById("chat-attach").onclick = () =>
+    openCoreModal("Attach image", "Image attach is full-platform. Core only talks through Squid AI.");
+  const panel = document.getElementById("chat-panel");
+  ["dragenter", "dragover"].forEach((type) => {
+    panel.addEventListener(type, (event) => {
+      event.preventDefault();
+      panel.classList.add("is-dragging");
+    });
   });
+  ["dragleave", "drop"].forEach((type) => {
+    panel.addEventListener(type, (event) => {
+      event.preventDefault();
+      panel.classList.remove("is-dragging");
+      if (type === "drop") {
+        openCoreModal("Attach image", "Image attach is full-platform. Core only talks through Squid AI.");
+      }
+    });
+  });
+  content.querySelectorAll("[data-prompt]").forEach((button) => {
+    button.addEventListener("click", () => {
+      content.querySelectorAll(".chat-example-card").forEach((card) => card.classList.remove("selected"));
+      button.classList.add("selected");
+      input.value = button.dataset.prompt;
+      input.focus();
+    });
+  });
+  requestAnimationFrame(() => document.getElementById("chat-welcome")?.classList.add("is-visible"));
 }
 
 async function onChatSubmit(event) {
@@ -372,26 +435,156 @@ function renderAgents() {
   corePage("Agents", `<div class="empty"><strong>No agents</strong>Create agents on the full platform.</div>`);
 }
 
-function renderActivity() {
-  corePage(
-    "Activity",
-    `
-    <div class="grid">
-      <article class="metric"><span>Busiest when</span><strong>—</strong></article>
-      <article class="metric"><span>Busiest where</span><strong>Chat</strong></article>
-      <article class="metric"><span>Logged events</span><strong>0</strong></article>
-    </div>
-    <section class="band">
-      <div class="section-head"><div><h3>Activity log</h3><p>When and where the most activity happens</p></div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Area</th><th>Time</th><th>From</th><th>Action</th><th>Outcome</th><th>Why</th></tr></thead>
-          <tbody><tr><td colspan="6">Nothing here yet.</td></tr></tbody>
-        </table>
-      </div>
-    </section>
-  `
+const ACTIVITY_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const ACTIVITY_DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const ACTIVITY_AREAS = [
+  { id: "trading", label: "Trading" },
+  { id: "payments", label: "Payments" },
+  { id: "approvals", label: "Approvals" },
+  { id: "issuing", label: "Issuing" },
+  { id: "rules", label: "Rules" },
+  { id: "agents", label: "Agents" },
+  { id: "billing", label: "Billing" },
+  { id: "issues", label: "Issues" }
+];
+
+function activityStats() {
+  const heat = ACTIVITY_DAYS.map(() => Array(24).fill(0));
+  const where = Object.fromEntries(ACTIVITY_AREAS.map((area) => [area.id, 0]));
+  const events = Array.isArray(state.activity) ? state.activity : [];
+  events.forEach((event) => {
+    const when = new Date(event.at || Date.now());
+    heat[when.getDay()][when.getHours()] += 1;
+    if (where[event.area] != null) where[event.area] += 1;
+  });
+  let peakDay = 0;
+  let peakHour = 0;
+  let peakCount = 0;
+  heat.forEach((row, day) => {
+    row.forEach((count, hour) => {
+      if (count > peakCount) {
+        peakCount = count;
+        peakDay = day;
+        peakHour = hour;
+      }
+    });
+  });
+  const topArea = ACTIVITY_AREAS.reduce(
+    (best, area) => (where[area.id] > (where[best] || 0) ? area.id : best),
+    ""
   );
+  const topCount = topArea ? where[topArea] : 0;
+  const nextHour = String((peakHour + 1) % 24).padStart(2, "0");
+  return {
+    events: events.length,
+    heat,
+    where,
+    whenTitle: peakCount ? `${ACTIVITY_DAY_NAMES[peakDay]} ${String(peakHour).padStart(2, "0")}:00–${nextHour}:00` : "—",
+    whenDetail: peakCount ? `${peakCount} event${peakCount === 1 ? "" : "s"} in that hour` : "No events in this view",
+    whereTitle: topCount ? ACTIVITY_AREAS.find((area) => area.id === topArea).label : "—",
+    whereDetail: topCount ? `${topCount} event${topCount === 1 ? "" : "s"} in ${ACTIVITY_AREAS.find((area) => area.id === topArea).label}` : "No events in this view"
+  };
+}
+
+function renderHeatmap(heat) {
+  const rows = ACTIVITY_DAYS.map((day, dayIndex) => {
+    const cells = heat[dayIndex]
+      .map((count, hour) => {
+        const level = count <= 0 ? 0 : Math.min(4, count);
+        return `<i class="heat-cell level-${level}" title="${day} ${String(hour).padStart(2, "0")}:00 · ${count}"></i>`;
+      })
+      .join("");
+    return `<span class="heat-day">${day}</span>${cells}`;
+  }).join("");
+  return `
+    <div class="heat-grid">${rows}</div>
+    <div class="heat-hours">
+      <span class="heat-day"></span>
+      <div class="heat-hours-scale"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
+    </div>
+    <p class="heat-legend"><span>Less</span><i class="heat-cell"></i><i class="heat-cell level-1"></i><i class="heat-cell level-2"></i><i class="heat-cell level-3"></i><i class="heat-cell level-4"></i><span>More</span></p>
+  `;
+}
+
+function renderWhereBars(where) {
+  const max = Math.max(1, ...ACTIVITY_AREAS.map((area) => where[area.id] || 0));
+  return ACTIVITY_AREAS.map((area) => {
+    const count = where[area.id] || 0;
+    return `
+      <div class="where-row">
+        <span>${escapeHtml(area.label)}</span>
+        <span class="where-track"><i style="width:${(count / max) * 100}%"></i></span>
+        <strong>${count}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderActivity() {
+  const stats = activityStats();
+  content.innerHTML = `
+    <div class="view activity-page">
+      <section class="band intensity-band">
+        <div class="section-head">
+          <div>
+            <h2>Trade intensity</h2>
+            <p>When and where the most activity happens</p>
+          </div>
+        </div>
+        <div class="grid">
+          <article class="metric"><span>Busiest when</span><strong>${escapeHtml(stats.whenTitle)}</strong><p>${escapeHtml(stats.whenDetail)}</p></article>
+          <article class="metric"><span>Busiest where</span><strong>${escapeHtml(stats.whereTitle)}</strong><p>${escapeHtml(stats.whereDetail)}</p></article>
+          <article class="metric"><span>Logged events</span><strong>${stats.events}</strong><p>From the Activity log in this view</p></article>
+        </div>
+        <div class="intensity-charts">
+          <div>
+            <h3>When</h3>
+            <p>Day of week × hour — darker cells are busier</p>
+            ${renderHeatmap(stats.heat)}
+          </div>
+          <div>
+            <h3>Where</h3>
+            <p>Which console area has the most activity</p>
+            <div class="where-list">${renderWhereBars(stats.where)}</div>
+          </div>
+        </div>
+      </section>
+      <section class="band">
+        <p class="notice visible">Core variant</p>
+        <div class="section-head">
+          <div>
+            <h2>Activity</h2>
+            <p>This is a Squid Pay Core variant. Only Squid AI / Chat works here. Activity lives on the full console.</p>
+          </div>
+        </div>
+        <div class="actions">
+          <a href="${FULL}" target="_blank" rel="noreferrer"><button class="primary" type="button">Open Squid Pay</button></a>
+          <a href="#/chat"><button type="button">Talk to Squid AI</button></a>
+        </div>
+      </section>
+      <section class="band">
+        <div class="section-head">
+          <div>
+            <h3>Activity log</h3>
+          </div>
+          <label class="activity-filter">Show
+            <select id="activity-filter">
+              <option value="all" selected>all</option>
+              ${ACTIVITY_AREAS.map((area) => `<option value="${escapeHtml(area.id)}">${escapeHtml(area.label)}</option>`).join("")}
+            </select>
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Area</th><th>Time</th><th>Workspace</th><th>From</th><th>Action</th><th>Outcome</th><th>Why</th></tr></thead>
+            <tbody><tr><td colspan="7">Nothing here yet.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  `;
+  document.getElementById("activity-filter").onchange = () =>
+    openCoreModal("Activity filter", "The full activity log lives on squidpay.dev. Core only talks through Squid AI.");
 }
 
 const CLI_COMMANDS = [
