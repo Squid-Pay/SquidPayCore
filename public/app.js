@@ -685,7 +685,7 @@ function renderSettings() {
         </div>
         <div class="settings-photo-row">
           <div class="profile-picture" aria-hidden="true">${escapeHtml(profile.initial)}</div>
-          <label class="file-button">Choose picture<input id="settings-picture" type="file" accept="image/*" /></label>
+          <button class="file-button" id="settings-picture" type="button">Choose picture</button>
         </div>
       </section>
       <label class="settings-field">Your name
@@ -753,10 +753,7 @@ function renderSettings() {
   `;
   const gate = (title) =>
     openCoreModal(title, `${title} is full-platform. Core shows the signed-in session only.`);
-  document.getElementById("settings-picture").onchange = (event) => {
-    event.target.value = "";
-    gate("Choose picture");
-  };
+  document.getElementById("settings-picture").onclick = () => gate("Choose picture");
   document.getElementById("settings-save-email").onclick = () => gate("Save email");
   ["settings-continent", "settings-country", "settings-usage", "settings-daily"].forEach((id) => {
     const field = document.getElementById(id);
