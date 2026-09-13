@@ -122,6 +122,139 @@ button.cli-button { background: transparent; cursor: pointer; }
   --radius: var(--radius-md);
 }
 
+.settings-page {
+  align-content: start;
+  gap: 16px;
+  max-width: 920px;
+}
+
+.settings-photo {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-photo h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.settings-photo p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.settings-field {
+  display: grid;
+  gap: 6px;
+  max-width: 360px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.settings-field input,
+.settings-account-modes select,
+.settings-location select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-radius: var(--radius-btn);
+}
+
+.settings-email {
+  max-width: 440px;
+}
+
+.settings-email-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-email-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-location {
+  max-width: 520px;
+}
+
+.settings-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr);
+  gap: 10px;
+}
+
+.settings-account strong,
+.settings-agents strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.settings-account-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.settings-account-modes label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.settings-footnote {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.settings-agents {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-agents button {
+  min-width: 36px;
+  padding: 0 10px;
+}
+
+@media (max-width: 720px) {
+  .settings-split,
+  .settings-account-modes,
+  .location-picker-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-field,
+  .settings-email,
+  .settings-location {
+    max-width: none;
+  }
+}
+
 a.nav-button,
 a.brand { text-decoration: none; color: inherit; }
 #menu-btn { display: none; }

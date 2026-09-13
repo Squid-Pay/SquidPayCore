@@ -628,8 +628,146 @@ function renderCli() {
   };
 }
 
+const SETTINGS_CONTINENTS = [
+  { value: "africa", label: "Africa" },
+  { value: "asia", label: "Asia" },
+  { value: "europe", label: "Europe" },
+  { value: "north-america", label: "North America" },
+  { value: "oceania", label: "Oceania" },
+  { value: "south-america", label: "South America" }
+];
+
+const SETTINGS_COUNTRIES = {
+  africa: ["Egypt", "Kenya", "Nigeria", "South Africa"],
+  asia: ["India", "Indonesia", "Japan", "Singapore", "South Korea"],
+  europe: ["France", "Germany", "Italy", "Netherlands", "Spain", "United Kingdom"],
+  "north-america": ["Canada", "Mexico", "United States"],
+  oceania: ["Australia", "New Zealand"],
+  "south-america": ["Argentina", "Brazil", "Chile"]
+};
+
+function profileFromSession() {
+  const session = state.session || {};
+  const provider = PROVIDER_LABELS[session.provider] || "wallet";
+  const address = session.address || "";
+  const email = String(session.email || "").trim();
+  const name = String(session.name || (session.provider === "email" ? "" : provider)).trim();
+  const initial = (name || provider || "S").charAt(0).toUpperCase();
+  return {
+    name,
+    email,
+    initial,
+    provider,
+    address,
+    agents: 0
+  };
+}
+
+function settingsSelectOptions(entries, selected) {
+  return entries
+    .map((entry) => {
+      const value = typeof entry === "string" ? entry : entry.value;
+      const label = typeof entry === "string" ? entry : entry.label;
+      return `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+}
+
 function renderSettings() {
-  corePage("Settings", `<section class="card"><p class="muted">Workspace, keys, and safety controls are on the full platform.</p></section>`);
+  const profile = profileFromSession();
+  const countryOptions = Object.values(SETTINGS_COUNTRIES).flat();
+  content.innerHTML = `
+    <div class="view settings-page">
+      <section class="band settings-photo">
+        <div>
+          <h3>Profile picture</h3>
+          <p>Shown on Home and account access.</p>
+        </div>
+        <div class="settings-photo-row">
+          <div class="profile-picture" aria-hidden="true">${escapeHtml(profile.initial)}</div>
+          <label class="file-button">Choose picture<input id="settings-picture" type="file" accept="image/*" /></label>
+        </div>
+      </section>
+      <label class="settings-field">Your name
+        <input id="settings-name" value="${escapeHtml(profile.name)}" placeholder="Your name" autocomplete="name" />
+      </label>
+      <label class="settings-field settings-email">Email address
+        <span class="settings-email-row">
+          <input id="settings-email" type="email" value="${escapeHtml(profile.email)}" placeholder="${profile.email ? "" : "Not stored on this Core session"}" autocomplete="email" />
+          <button id="settings-save-email" type="button">Save</button>
+        </span>
+      </label>
+      <section class="location-picker settings-location">
+        <div class="location-picker-head">
+          <div>
+            <p class="eyebrow">Location</p>
+            <strong class="location-picker-title">Account location</strong>
+            <p class="location-picker-copy">Set when this account was created. It does not update when you change cities or travel.</p>
+          </div>
+        </div>
+        <p class="location-picker-status">Not set for this session. Location locks on the full platform.</p>
+        <div class="location-picker-fields">
+          <label>Continent
+            <select id="settings-continent">
+              <option value="">Select continent</option>
+              ${settingsSelectOptions(SETTINGS_CONTINENTS, "")}
+            </select>
+          </label>
+          <label>Country
+            <select id="settings-country">
+              <option value="">Select country</option>
+              ${settingsSelectOptions(countryOptions, "")}
+            </select>
+          </label>
+        </div>
+      </section>
+      <div class="settings-split">
+        <section class="band settings-account">
+          <p class="eyebrow">Account type</p>
+          <strong>Individual</strong>
+          <div class="settings-account-modes">
+            <label>Usage mode
+              <select id="settings-usage">
+                <option selected>Individual</option>
+                <option>Business</option>
+              </select>
+            </label>
+            <label>Daily use mode
+              <select id="settings-daily">
+                <option selected>Home / Daily Use</option>
+                <option>Trader</option>
+              </select>
+            </label>
+          </div>
+          <p class="settings-footnote">Home / Daily Use is the default. Trader unlocks live Hyperliquid after you type TRADE.</p>
+        </section>
+        <section class="band settings-agents">
+          <div>
+            <p class="eyebrow">Connected agents</p>
+            <strong>${profile.agents}</strong>
+          </div>
+          <button class="ghost" data-core="Connected agents" type="button" aria-label="Agent options">⋯</button>
+        </section>
+      </div>
+    </div>
+  `;
+  const gate = (title) =>
+    openCoreModal(title, `${title} is full-platform. Core shows the signed-in session only.`);
+  document.getElementById("settings-picture").onchange = (event) => {
+    event.target.value = "";
+    gate("Choose picture");
+  };
+  document.getElementById("settings-save-email").onclick = () => gate("Save email");
+  ["settings-continent", "settings-country", "settings-usage", "settings-daily"].forEach((id) => {
+    const field = document.getElementById(id);
+    field.onchange = () => {
+      field.selectedIndex = 0;
+      gate(field.previousSibling && field.previousSibling.textContent ? field.previousSibling.textContent.trim() : "Settings");
+    };
+  });
+  content.querySelectorAll("[data-core]").forEach((button) => {
+    button.onclick = () => gate(button.dataset.core);
+  });
 }
 
 function renderHelp() {

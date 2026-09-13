@@ -91,4 +91,18 @@ describe("wallet connect gate", () => {
     assert.match(app, /Only Squid AI \/ Chat works here/);
     assert.match(app, /Talk to Squid AI/);
   });
+
+  it("fills Settings from the signed-in session instead of a sample profile", () => {
+    assert.match(app, /function profileFromSession/);
+    assert.match(app, /Profile picture/);
+    assert.match(app, /Your name/);
+    assert.match(app, /Email address/);
+    assert.match(app, /Account location/);
+    assert.match(app, /Connected agents/);
+    assert.match(app, /Home \/ Daily Use/);
+    assert.match(app, /session\.email/);
+    assert.match(app, /session\.name/);
+    assert.doesNotMatch(app, /horatiucode/);
+    assert.doesNotMatch(app, /Workspace, keys, and safety controls/);
+  });
 });
